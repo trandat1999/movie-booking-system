@@ -2,6 +2,7 @@ package com.moviebooking.modules.movie.repository;
 
 import com.moviebooking.modules.movie.entity.Genre;
 import com.moviebooking.modules.movie.entity.Movie;
+import com.moviebooking.modules.movie.enums.AgeRating;
 import com.moviebooking.modules.movie.enums.MovieStatus;
 import jakarta.persistence.criteria.Join;
 import java.util.Locale;
@@ -24,6 +25,21 @@ public final class MovieSpecifications {
 
     public static Specification<Movie> hasStatus(MovieStatus status) {
         return status == null ? null : (root, query, cb) -> cb.equal(root.get("status"), status);
+    }
+
+    /** Phim khách hàng được thấy: đang chiếu hoặc sắp chiếu. */
+    public static Specification<Movie> visibleToPublic() {
+        return (root, query, cb) -> root.get("status").in(MovieStatus.NOW_SHOWING, MovieStatus.COMING_SOON);
+    }
+
+    public static Specification<Movie> hasAgeRating(AgeRating ageRating) {
+        return ageRating == null ? null : (root, query, cb) -> cb.equal(root.get("ageRating"), ageRating);
+    }
+
+    public static Specification<Movie> hasLanguage(String language) {
+        return language == null || language.isBlank()
+                ? null
+                : (root, query, cb) -> cb.equal(root.get("language"), language);
     }
 
     public static Specification<Movie> hasGenre(Long genreId) {

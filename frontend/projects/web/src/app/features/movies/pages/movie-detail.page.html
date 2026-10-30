@@ -1,0 +1,94 @@
+@if (store.notFound()) {
+  <nz-result nzStatus="404" nzTitle="Không tìm thấy phim" nzSubTitle="Phim không tồn tại hoặc đã ngừng chiếu.">
+    <div nz-result-extra>
+      <a nz-button nzType="primary" routerLink="/movies">Xem phim đang chiếu</a>
+    </div>
+  </nz-result>
+}
+@if (store.movie(); as movie) {
+  <section class="hero">
+    <lib-movie-poster [url]="movie.posterUrl" [title]="movie.title" [width]="220" class="poster" />
+    <div class="info">
+      <div class="tags">
+        <nz-tag [nzColor]="ratingColors[movie.ageRating]">{{ movie.ageRating }}</nz-tag>
+        <nz-tag>{{ statusLabels[movie.status] }}</nz-tag>
+      </div>
+      <h1>{{ movie.title }}</h1>
+      @if (movie.originalTitle) {
+        <div class="original">{{ movie.originalTitle }}</div>
+      }
+      <dl>
+        <dt>Thể loại</dt>
+        <dd>
+          @for (g of movie.genres; track g.id) {
+            {{ g.name }}{{ $last ? '' : ', ' }}
+          }
+        </dd>
+        <dt>Thời lượng</dt>
+        <dd>{{ movie.durationMin }} phút</dd>
+        <dt>Khởi chiếu</dt>
+        <dd>{{ movie.releaseDate | date: 'dd/MM/yyyy' }}</dd>
+        <dt>Ngôn ngữ</dt>
+        <dd>{{ movie.language }}</dd>
+        <dt>Độ tuổi</dt>
+        <dd>{{ ratingLabels[movie.ageRating] }}</dd>
+        @if (movie.directors.length) {
+          <dt>Đạo diễn</dt>
+          <dd>
+            @for (p of movie.directors; track p.id) {
+              {{ p.fullName }}{{ $last ? '' : ', ' }}
+            }
+          </dd>
+        }
+        @if (movie.actors.length) {
+          <dt>Diễn viên</dt>
+          <dd>
+            @for (p of movie.actors; track p.id) {
+              {{ p.fullName }}{{ $last ? '' : ', ' }}
+            }
+          </dd>
+        }
+      </dl>
+      @if (movie.description) {
+        <p class="description">{{ movie.description }}</p>
+      }
+    </div>
+  </section>
+
+  @if (trailer(); as url) {
+    <section>
+      <h2>Trailer</h2>
+      <div class="trailer">
+        <iframe [src]="url" title="Trailer" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe>
+      </div>
+    </section>
+  }
+
+  <section>
+    <h2>Lịch chiếu</h2>
+    @if (movie.status === 'COMING_SOON') {
+      <nz-empty [nzNotFoundContent]="'Phim sẽ khởi chiếu từ ' + (movie.releaseDate | date: 'dd/MM/yyyy') + '.'" />
+    } @else {
+      <app-day-tabs [days]="days" [selected]="selectedDate()" (selectedChange)="selectDate($event)" />
+      @if (store.loadingShowtimes()) {
+        <nz-skeleton [nzActive]="true" class="showtimes" />
+      } @else {
+        <div class="showtimes">
+          @for (c of cinemas(); track c.cinemaId) {
+            <div class="cinema">
+              <div class="cinema-name">
+                <a [routerLink]="['/cinemas', c.cinemaId]">{{ c.cinemaName }}</a>
+                <span class="muted">{{ c.city }}</span>
+              </div>
+              <app-showtime-times [versions]="c.versions" />
+            </div>
+          } @empty {
+            <nz-empty nzNotFoundContent="Không có suất chiếu trong ngày này." />
+          }
+        </div>
+      }
+    }
+  </section>
+} @else if (!store.notFound()) {
+  <nz-skeleton [nzActive]="true" [nzParagraph]="{ rows: 8 }" />
+}

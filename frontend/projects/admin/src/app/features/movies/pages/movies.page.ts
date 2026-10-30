@@ -6,6 +6,7 @@ import {
   AGE_RATING_COLORS,
   MOVIE_STATUS_COLORS,
   MOVIE_STATUS_LABELS,
+  MoviePosterComponent,
   MovieStatus,
   MovieSummary,
   toOptions,
@@ -20,7 +21,6 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 
-import { MoviePosterComponent } from '../components/movie-poster.component';
 import { CatalogStore } from '../catalog.store';
 
 @Component({

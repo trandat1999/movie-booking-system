@@ -10,6 +10,7 @@ import {
   DAY_TYPE_LABELS,
   FORMAT_LABELS,
   fromIsoDate,
+  isoToVnParts,
   PHASE_COLORS,
   PHASE_LABELS,
   PriceQuote,
@@ -19,6 +20,8 @@ import {
   Showtime,
   toIsoDate,
   toOptions,
+  VN_OFFSET,
+  vnDateTimeToIso,
   VndPipe,
 } from '@mb/shared';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
@@ -37,7 +40,6 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzTimePickerModule } from 'ng-zorro-antd/time-picker';
 
 import { ShowtimesStore } from '../showtimes.store';
-import { isoToVnParts, VN_OFFSET, vnDateTimeToIso } from '../vn-time';
 
 interface ShowtimeForm {
   movieId: number | null;

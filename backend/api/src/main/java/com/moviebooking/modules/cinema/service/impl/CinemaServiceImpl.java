@@ -5,6 +5,7 @@ import com.moviebooking.exception.ErrorCode;
 import com.moviebooking.modules.cinema.dto.request.CinemaRequest;
 import com.moviebooking.modules.cinema.dto.response.CinemaResponse;
 import com.moviebooking.modules.cinema.entity.Cinema;
+import com.moviebooking.modules.cinema.enums.CinemaStatus;
 import com.moviebooking.modules.cinema.mapper.CinemaMapper;
 import com.moviebooking.modules.cinema.repository.CinemaRepository;
 import com.moviebooking.modules.cinema.repository.RoomRepository;
@@ -60,6 +61,22 @@ public class CinemaServiceImpl implements CinemaService {
             throw new BusinessException(ErrorCode.CINEMA_ALREADY_EXISTS);
         }
         apply(cinema, request);
+        return toResponse(cinema);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CinemaResponse> listPublic() {
+        return list().stream().filter(c -> c.status() == CinemaStatus.ACTIVE).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CinemaResponse getPublic(Long id) {
+        Cinema cinema = find(id);
+        if (cinema.getStatus() != CinemaStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.CINEMA_NOT_FOUND);
+        }
         return toResponse(cinema);
     }
 

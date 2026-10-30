@@ -9,6 +9,12 @@ export const routes: Routes = [
     component: MainLayoutComponent,
     children: [
       { path: '', loadChildren: () => import('./features/home/home.routes').then((m) => m.HOME_ROUTES) },
+      { path: 'movies', loadChildren: () => import('./features/movies/movies.routes').then((m) => m.MOVIES_ROUTES) },
+      { path: 'cinemas', loadChildren: () => import('./features/cinemas/cinemas.routes').then((m) => m.CINEMAS_ROUTES) },
+      {
+        path: 'showtimes',
+        loadChildren: () => import('./features/showtime/showtime.routes').then((m) => m.SHOWTIME_ROUTES),
+      },
       {
         path: '',
         canActivate: [guestGuard],
@@ -19,7 +25,7 @@ export const routes: Routes = [
         canActivate: [authGuard],
         loadChildren: () => import('./features/account/account.routes').then((m) => m.ACCOUNT_ROUTES),
       },
-      // M3+: movies, cinemas, booking, group, notifications
+      // M4+: booking, group, notifications
     ],
   },
   { path: '**', redirectTo: '' },

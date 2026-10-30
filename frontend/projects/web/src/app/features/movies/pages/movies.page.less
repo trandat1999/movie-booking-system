@@ -1,0 +1,49 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.search {
+  width: 220px;
+}
+
+.select {
+  width: 150px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 24px 16px;
+}
+
+.empty {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.pagination {
+  margin-top: 32px;
+  text-align: center;
+}
+
+@media (max-width: 576px) {
+  .search,
+  .select {
+    width: calc(50% - 4px);
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 12px;
+  }
+}

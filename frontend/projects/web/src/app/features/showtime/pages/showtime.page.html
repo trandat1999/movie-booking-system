@@ -1,0 +1,57 @@
+@if (store.notFound()) {
+  <nz-result nzStatus="404" nzTitle="Suất chiếu không còn bán vé" nzSubTitle="Suất chiếu đã bắt đầu, đã hủy hoặc không tồn tại.">
+    <div nz-result-extra><a nz-button nzType="primary" routerLink="/movies">Chọn phim khác</a></div>
+  </nz-result>
+}
+@if (store.detail(); as d) {
+  <section class="summary">
+    <lib-movie-poster [url]="d.showtime.moviePosterUrl" [title]="d.showtime.movieTitle" [width]="96" />
+    <div class="info">
+      <a [routerLink]="['/movies', d.showtime.movieSlug]" class="title">{{ d.showtime.movieTitle }}</a>
+      <div>
+        <nz-tag [nzColor]="ratingColors[d.showtime.ageRating]">{{ d.showtime.ageRating }}</nz-tag>
+        <nz-tag>{{ formatLabels[d.showtime.format] }} · {{ audioLabels[d.showtime.audioType] }}</nz-tag>
+      </div>
+      <div class="when">
+        {{ d.showtime.startAt | date: 'HH:mm' : vn }} – {{ d.showtime.endAt | date: 'HH:mm' : vn }} ·
+        {{ d.showtime.startAt | date: 'EEEE, dd/MM/yyyy' : vn }}
+      </div>
+      <div class="muted">
+        <a [routerLink]="['/cinemas', d.showtime.cinemaId]">{{ d.showtime.cinemaName }}</a> · {{ d.showtime.roomName }}
+        ({{ roomTypeLabels[d.showtime.roomType] }}) — {{ d.cinemaAddress }}
+      </div>
+    </div>
+  </section>
+
+  @if (ageWarning(); as warning) {
+    <nz-alert nzType="warning" nzShowIcon [nzMessage]="warning" class="alert" />
+  }
+
+  <nz-card [nzTitle]="'Sơ đồ ghế — còn ' + d.showtime.availableSeats + ' ghế trống'" [nzExtra]="zoomControls">
+    @if (store.seatMap(); as map) {
+      <div class="legend">
+        @for (t of map.seatTypes; track t.code) {
+          <span class="item"><i [style.background]="t.color"></i>{{ t.name }} · {{ t.price | vnd }}</span>
+        }
+        <span class="item"><i class="held"></i>Đang được giữ</span>
+        <span class="item"><i class="sold"></i>Đã bán</span>
+        <span class="item"><i class="blocked"></i>Không bán</span>
+      </div>
+      <lib-seat-grid
+        [gridRows]="map.gridRows"
+        [gridCols]="map.gridCols"
+        [seats]="gridSeats()"
+        [colors]="colors()"
+        [cellSize]="cellSize()"
+        (seatClick)="onSeat($event)"
+      />
+      <p class="note">Giá ghế đôi là giá cho cả ghế (2 người).</p>
+    }
+  </nz-card>
+  <ng-template #zoomControls>
+    <button nz-button nzSize="small" (click)="zoom(-4)" aria-label="Thu nhỏ sơ đồ">−</button>
+    <button nz-button nzSize="small" (click)="zoom(4)" aria-label="Phóng to sơ đồ" class="zoom-in">+</button>
+  </ng-template>
+} @else if (!store.notFound()) {
+  <nz-skeleton [nzActive]="true" [nzParagraph]="{ rows: 10 }" />
+}

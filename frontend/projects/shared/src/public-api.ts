@@ -18,6 +18,7 @@ export * from './lib/api/admin-catalog.api';
 export * from './lib/api/admin-cinema.api';
 export * from './lib/api/admin-showtime.api';
 export * from './lib/api/admin-user.api';
+export * from './lib/api/catalog.api';
 export * from './lib/api/auth.api';
 export * from './lib/api/me.api';
 
@@ -25,10 +26,12 @@ export * from './lib/api/me.api';
 export * from './lib/models/api-response.model';
 export * from './lib/models/catalog.model';
 export * from './lib/models/labels';
+export * from './lib/models/public.model';
 export * from './lib/models/user.model';
 
 // components
 export * from './lib/components/login-form/login-form.component';
+export * from './lib/components/movie-poster/movie-poster.component';
 export * from './lib/components/seat-grid/seat-grid.component';
 export * from './lib/components/user-status-tag/user-status-tag.component';
 
@@ -39,3 +42,5 @@ export * from './lib/pipes/vnd.pipe';
 export * from './lib/utils/form-errors';
 export * from './lib/utils/navigation';
 export * from './lib/utils/validation';
+export * from './lib/utils/vn-time';
+export * from './lib/utils/youtube';

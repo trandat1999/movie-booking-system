@@ -23,3 +23,27 @@ export function isoToVnParts(iso: string): { date: string; time: string } {
     time: instant.toLocaleTimeString('en-GB', { timeZone: VN_ZONE, hour: '2-digit', minute: '2-digit' }),
   };
 }
+
+export interface DayTab {
+  /** yyyy-MM-dd theo giờ Việt Nam */
+  date: string;
+  /** "Hôm nay", "Ngày mai", "Thứ 2"… "Chủ nhật" */
+  label: string;
+  /** dd/MM */
+  dayMonth: string;
+}
+
+const WEEKDAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+
+/** {@link count} ngày liên tiếp bắt đầu từ hôm nay (giờ Việt Nam) cho thanh chọn ngày chiếu. */
+export function nextDays(count: number, now = new Date()): DayTab[] {
+  const [y, m, d] = todayInVietnam(now).split('-').map(Number);
+  return Array.from({ length: count }, (_, i) => {
+    // Dùng UTC để cộng ngày không bị ảnh hưởng múi giờ trình duyệt
+    const day = new Date(Date.UTC(y, m - 1, d + i));
+    const date = day.toISOString().slice(0, 10);
+    const dayMonth = `${date.slice(8, 10)}/${date.slice(5, 7)}`;
+    const label = i === 0 ? 'Hôm nay' : i === 1 ? 'Ngày mai' : WEEKDAYS[day.getUTCDay()];
+    return { date, label, dayMonth };
+  });
+}

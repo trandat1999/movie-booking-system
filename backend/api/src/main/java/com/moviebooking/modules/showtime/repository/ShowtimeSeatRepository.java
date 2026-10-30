@@ -62,6 +62,22 @@ public class ShowtimeSeatRepository {
         return result;
     }
 
+    /** Trạng thái hiệu lực của từng ghế trong suất: seatId → trạng thái (HELD quá hạn → AVAILABLE). */
+    public Map<Long, ShowtimeSeatStatus> findStates(Long showtimeId, Instant now) {
+        Map<Long, ShowtimeSeatStatus> states = new HashMap<>();
+        jdbc.query(
+                """
+                SELECT seat_id,
+                       CASE WHEN status = 'HELD' AND held_until < :now THEN 'AVAILABLE' ELSE status END AS effective
+                FROM showtime_seats WHERE showtime_id = :id
+                """,
+                new MapSqlParameterSource().addValue("id", showtimeId).addValue("now", Timestamp.from(now)),
+                rs -> {
+                    states.put(rs.getLong("seat_id"), ShowtimeSeatStatus.valueOf(rs.getString("effective")));
+                });
+        return states;
+    }
+
     /** Có ghế đang được giữ (chưa hết hạn) hoặc đã bán hay không. */
     public boolean hasHeldOrSoldSeats(Long showtimeId, Instant now) {
         Boolean exists = jdbc.queryForObject(

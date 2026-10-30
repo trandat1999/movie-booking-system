@@ -8,6 +8,7 @@ import {
   fromIsoDate,
   MOVIE_STATUS_LABELS,
   MovieDetail,
+  MoviePosterComponent,
   MovieStatus,
   Person,
   toIsoDate,
@@ -27,7 +28,6 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzSkeletonModule } from 'ng-zorro-antd/skeleton';
 import { debounceTime, distinctUntilChanged, Subject, switchMap } from 'rxjs';
 
-import { MoviePosterComponent } from '../components/movie-poster.component';
 import { CatalogStore } from '../catalog.store';
 
 @Component({

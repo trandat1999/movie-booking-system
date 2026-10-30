@@ -2,7 +2,7 @@ import { Component, computed, input } from '@angular/core';
 
 /** Poster phim; chưa có ảnh thì hiện khối màu với chữ cái đầu của tên phim. */
 @Component({
-  selector: 'adm-movie-poster',
+  selector: 'lib-movie-poster',
   template: `
     @if (url()) {
       <img [src]="url()" [alt]="title()" [style.width.px]="width()" [style.height.px]="width() * 1.5" />

@@ -44,7 +44,7 @@
     <tbody>
       @for (movie of table.data; track movie.id) {
         <tr>
-          <td><adm-movie-poster [url]="movie.posterUrl" [title]="movie.title" /></td>
+          <td><lib-movie-poster [url]="movie.posterUrl" [title]="movie.title" /></td>
           <td>
             <a [routerLink]="[movie.id]" class="title">{{ movie.title }}</a>
             <div>

@@ -10,6 +10,7 @@ import com.moviebooking.modules.movie.dto.response.MovieSummaryResponse;
 import com.moviebooking.modules.movie.entity.Genre;
 import com.moviebooking.modules.movie.entity.Movie;
 import com.moviebooking.modules.movie.entity.Person;
+import com.moviebooking.modules.movie.enums.AgeRating;
 import com.moviebooking.modules.movie.enums.MovieStatus;
 import com.moviebooking.modules.movie.mapper.MovieMapper;
 import com.moviebooking.modules.movie.repository.GenreRepository;
@@ -25,6 +26,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -90,6 +92,44 @@ public class MovieServiceImpl implements MovieService {
             // FK từ showtimes chặn xóa phim đã có suất chiếu
             throw new BusinessException(ErrorCode.MOVIE_IN_USE);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<MovieSummaryResponse> searchPublic(
+            String keyword, MovieStatus status, Long genreId, AgeRating ageRating, String language, int page, int size) {
+        if (status == MovieStatus.ENDED) {
+            return PageResponse.from(Page.empty());
+        }
+        Specification<Movie> spec = Specification.allOf(
+                MovieSpecifications.visibleToPublic(),
+                MovieSpecifications.hasStatus(status),
+                MovieSpecifications.keyword(keyword),
+                MovieSpecifications.hasGenre(genreId),
+                MovieSpecifications.hasAgeRating(ageRating),
+                MovieSpecifications.hasLanguage(language));
+        Sort.Direction direction = status == MovieStatus.COMING_SOON ? Sort.Direction.ASC : Sort.Direction.DESC;
+        PageRequest pageable = PageRequest.of(
+                Math.max(page, 0),
+                Math.min(Math.max(size, 1), MAX_PAGE_SIZE),
+                Sort.by(direction, "releaseDate").and(Sort.by(Sort.Direction.DESC, "id")));
+        return PageResponse.from(movieRepository.findAll(spec, pageable).map(movieMapper::toSummary));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MovieDetailResponse getPublicBySlug(String slug) {
+        return movieRepository
+                .findWithDetailsBySlug(slug)
+                .filter(movie -> movie.getStatus() != MovieStatus.ENDED)
+                .map(movieMapper::toDetail)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> listLanguages() {
+        return movieRepository.findVisibleLanguages();
     }
 
     @Override
