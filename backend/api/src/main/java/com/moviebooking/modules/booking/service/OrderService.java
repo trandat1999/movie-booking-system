@@ -25,6 +25,22 @@ public interface OrderService {
     /** @param past true = vé các suất đã chiếu xong */
     List<MyTicketResponse> myTickets(Long userId, boolean past);
 
+    // --- Dùng cho module nhóm ---
+
+    Long findIdByCode(String code);
+
+    OrderSummaryResponse findSummary(Long orderId);
+
+    /** Vé của đơn theo thứ tự ghế. */
+    List<OrderTicket> ticketsOfOrder(Long orderId);
+
+    /** Đổi người giữ vé (phân phối vé nhóm, GRP17) — vé xuất hiện trong "Vé của tôi" của người được giao. */
+    void assignTicketHolders(Long orderId, Map<Long, TicketHolder> holders);
+
+    record OrderTicket(Long id, String code, Long seatId, String seatLabel, Long holderUserId, String holderName) {}
+
+    record TicketHolder(Long userId, String name) {}
+
     // --- Dùng cho module thanh toán ---
 
     /**

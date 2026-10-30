@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
+    List<Ticket> findByOrderIdOrderByIdAsc(Long orderId);
+
     /** Vé của người dùng cho các suất chưa kết thúc, suất gần nhất trước (Vé của tôi). */
     @Query("select t from Ticket t join fetch t.order o join fetch o.showtime s join fetch s.movie "
             + "join fetch s.room r join fetch r.cinema "

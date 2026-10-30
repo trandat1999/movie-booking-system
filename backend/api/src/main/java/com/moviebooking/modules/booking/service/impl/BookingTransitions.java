@@ -7,6 +7,7 @@ import com.moviebooking.modules.booking.entity.OrderEvent;
 import com.moviebooking.modules.booking.entity.SeatHold;
 import com.moviebooking.modules.booking.enums.HoldStatus;
 import com.moviebooking.modules.booking.enums.OrderStatus;
+import com.moviebooking.modules.booking.event.HoldClosedEvent;
 import com.moviebooking.modules.booking.event.OrderStatusChangedEvent;
 import com.moviebooking.modules.booking.repository.OrderEventRepository;
 import com.moviebooking.modules.booking.repository.OrderRepository;
@@ -65,7 +66,15 @@ class BookingTransitions {
                 .ifPresent(o -> changeStatus(o, orderStatus, eventType, actorId, null));
         hold.setStatus(holdStatus);
         showtimeSeatService.release(hold.getShowtimeId(), holdId);
+        publishIfGroupHold(hold);
         return true;
+    }
+
+    /** Lượt giữ của nhóm đã đóng (không thành vé) → báo module nhóm trong cùng transaction. */
+    void publishIfGroupHold(SeatHold hold) {
+        if (hold.getGroupId() != null) {
+            eventPublisher.publishEvent(new HoldClosedEvent(hold.getId(), hold.getGroupId(), hold.getStatus()));
+        }
     }
 
     void changeStatus(Order order, OrderStatus to, String eventType, Long actorId, Map<String, Object> data) {
@@ -76,7 +85,8 @@ class BookingTransitions {
         }
         recordEvent(order, eventType, from, to, actorId, data);
         eventPublisher.publishEvent(
-                new OrderStatusChangedEvent(order.getId(), order.getCode(), order.getUserId(), from, to));
+                new OrderStatusChangedEvent(
+                        order.getId(), order.getCode(), order.getUserId(), order.getGroupId(), from, to));
     }
 
     void recordEvent(

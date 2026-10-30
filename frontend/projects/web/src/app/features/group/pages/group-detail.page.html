@@ -1,0 +1,334 @@
+@if (store.notFound()) {
+  <nz-result nzStatus="404" nzTitle="Không tìm thấy nhóm" nzSubTitle="Nhóm không tồn tại hoặc bạn không còn là thành viên.">
+    <div nz-result-extra><a nz-button nzType="primary" routerLink="/groups">Nhóm của tôi</a></div>
+  </nz-result>
+}
+@if (store.detail(); as g) {
+  <div class="layout">
+    <div class="main">
+      <!-- Thông tin nhóm & tiến trình -->
+      <nz-card class="block">
+        <div class="header">
+          <lib-movie-poster [url]="g.movie.posterUrl" [title]="g.movie.title" [width]="88" />
+          <div class="info">
+            <div class="title-row">
+              <h1>{{ g.name }}</h1>
+              <nz-tag [nzColor]="statusColors[g.status]">{{ statusLabels[g.status] }}</nz-tag>
+            </div>
+            <div>
+              <a [routerLink]="['/movies', g.movie.slug]">{{ g.movie.title }}</a>
+              <nz-tag [nzColor]="ratingColors[g.movie.ageRating]" class="rating">{{ g.movie.ageRating }}</nz-tag>
+            </div>
+            <div class="muted">
+              {{ g.cinema ? g.cinema.name : 'Rạp nào cũng được' }}
+              @if (g.dateFrom || g.dateTo) {
+                · {{ g.dateFrom ? (g.dateFrom | date: 'dd/MM') : '…' }} – {{ g.dateTo ? (g.dateTo | date: 'dd/MM') : '…' }}
+              }
+              · Hạn chốt {{ g.rsvpDeadline | date: 'HH:mm dd/MM/yyyy' : vn }}
+            </div>
+          </div>
+        </div>
+
+        <div class="progress">
+          <div class="progress-text">
+            <strong>{{ g.progress.responded }}/{{ g.progress.members }}</strong> đã phản hồi ·
+            <strong>{{ g.progress.yes }}</strong> tham gia ·
+            <strong>{{ g.progress.ticketCount }}</strong> vé dự kiến
+          </div>
+          <nz-progress [nzPercent]="respondedPercent()" nzSize="small" [nzShowInfo]="false" />
+          @if (pendingNames()) {
+            <div class="muted small">Chưa phản hồi: {{ pendingNames() }}</div>
+          }
+        </div>
+
+        @if (g.status === 'OPEN') {
+          <div class="invite">
+            <span>Mã mời <code class="code">{{ g.code }}</code></span>
+            <button nz-button nzSize="small" (click)="copyInvite()">Sao chép link mời</button>
+            @if (store.isLeader()) {
+              <button nz-button nzSize="small" nzType="text" (click)="regenerateCode()">Tạo mã mới</button>
+            }
+          </div>
+        }
+      </nz-card>
+
+      @for (warning of g.ageWarnings; track warning) {
+        <nz-alert nzType="warning" nzShowIcon [nzMessage]="warning" class="alert" />
+      }
+
+      <!-- Đang giữ ghế -->
+      @if (g.status === 'HOLDING' && g.hold) {
+        <nz-alert nzType="info" nzShowIcon class="alert" [nzMessage]="holdMessage" />
+        <ng-template #holdMessage>
+          <div class="hold">
+            <span>
+              Đã giữ {{ g.hold.seatIds.length }} ghế cho nhóm — còn
+              <app-countdown [expiresAt]="g.hold.expiresAt" [serverTime]="g.serverTime" (expired)="store.refresh()" />
+            </span>
+            @if (store.isLeader()) {
+              <span class="hold-actions">
+                <button nz-button nzType="primary" [nzLoading]="store.busy()" (click)="pay()">Thanh toán</button>
+                <button nz-button [disabled]="store.busy()" (click)="releaseHold()">Chọn lại ghế</button>
+              </span>
+            } @else {
+              <span class="muted">Trưởng nhóm đang thanh toán.</span>
+            }
+          </div>
+        </ng-template>
+      }
+
+      <!-- Đã chốt: suất, số vé, sơ đồ -->
+      @if (g.locked; as locked) {
+        <nz-card class="block" nzTitle="Suất chiếu đã chốt" [nzExtra]="lockedActions">
+          <div class="locked">
+            <strong>{{ locked.showtime.startAt | date: 'HH:mm, EEEE dd/MM/yyyy' : vn }}</strong>
+            · {{ locked.showtime.cinemaName }} · {{ locked.showtime.roomName }} ·
+            {{ formatLabels[locked.showtime.format] }} {{ audioLabels[locked.showtime.audioType] }} ·
+            <strong>{{ locked.ticketCount }} vé</strong>
+          </div>
+          @if (store.lockedSeatMap(); as map) {
+            <p class="muted small">
+              @if (g.status === 'LOCKED') {
+                Ghế tô viền xanh là phương án trưởng nhóm đang xem (cập nhật trực tiếp).
+              } @else if (g.status === 'HOLDING') {
+                Ghế tô viền xanh là ghế đang giữ cho nhóm.
+              } @else {
+                Ghế tô viền xanh là ghế của nhóm.
+              }
+            </p>
+            <div class="grid-wrap">
+              <lib-seat-grid
+                [gridRows]="map.gridRows"
+                [gridCols]="map.gridCols"
+                [seats]="gridSeats()"
+                [colors]="seatColors()"
+                [cellSize]="22"
+              />
+            </div>
+          }
+        </nz-card>
+        <ng-template #lockedActions>
+          @if (store.isLeader() && g.status === 'LOCKED') {
+            <a nz-button nzType="primary" [routerLink]="['/groups', g.id, 'seats']">Chọn ghế cho nhóm</a>
+            <button nz-button nzType="text" (click)="unlock()">Mở chốt</button>
+          }
+        </ng-template>
+      }
+
+      <!-- Đã đặt: phân phối vé & chia tiền -->
+      @if (g.status === 'BOOKED' || g.status === 'COMPLETED') {
+        <nz-card class="block" nzTitle="Vé của nhóm" [nzExtra]="assignmentActions">
+          <nz-table [nzData]="g.assignments" [nzShowPagination]="false" nzSize="small" [nzFrontPagination]="false">
+            <thead>
+              <tr>
+                <th>Ghế</th>
+                <th>Người giữ vé</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of g.assignments; track a.ticketCode) {
+                <tr>
+                  <td>{{ a.seatLabel }}</td>
+                  <td>
+                    @if (editingAssignments()) {
+                      <nz-select [(ngModel)]="assignmentDraft[a.ticketCode]" class="member-select" [attr.aria-label]="'Người giữ vé ghế ' + a.seatLabel">
+                        @for (m of g.members; track m.userId) {
+                          <nz-option [nzValue]="m.userId" [nzLabel]="m.fullName" />
+                        }
+                      </nz-select>
+                    } @else {
+                      {{ a.holderName }}
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </nz-table>
+          <p class="muted small">Mỗi người thấy vé (kèm QR) của mình trong mục <a routerLink="/account/tickets">Vé của tôi</a>.</p>
+
+          @if (g.shares.length > 0) {
+            <h3>Chia tiền (tham khảo)</h3>
+            <nz-table [nzData]="g.shares" [nzShowPagination]="false" nzSize="small" [nzFrontPagination]="false">
+              <thead>
+                <tr>
+                  <th>Thành viên</th>
+                  <th>Số người</th>
+                  <th nzAlign="right">Số tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (s of g.shares; track s.userId) {
+                  <tr>
+                    <td>{{ s.fullName }}</td>
+                    <td>{{ s.people }}</td>
+                    <td nzAlign="right">{{ s.amount | vnd }}</td>
+                  </tr>
+                }
+              </tbody>
+            </nz-table>
+          }
+          @if (g.order) {
+            <p class="small"><a [routerLink]="['/orders', g.order.code]">Xem đơn {{ g.order.code }}</a></p>
+          }
+        </nz-card>
+        <ng-template #assignmentActions>
+          @if (store.isLeader() && g.status === 'BOOKED') {
+            @if (editingAssignments()) {
+              <button nz-button nzType="primary" nzSize="small" [nzLoading]="store.busy()" (click)="saveAssignments()">Lưu</button>
+              <button nz-button nzSize="small" (click)="editingAssignments.set(false)">Hủy</button>
+            } @else {
+              <button nz-button nzSize="small" (click)="editAssignments()">Sửa phân phối vé</button>
+            }
+          }
+        </ng-template>
+      }
+
+      <!-- Đang lên kế hoạch: phản hồi & bình chọn -->
+      @if (g.status === 'OPEN') {
+        @if (store.me(); as me) {
+          <nz-card class="block" nzTitle="Phản hồi của bạn">
+            <app-rsvp-form [member]="me" [saving]="store.busy()" (saved)="saveRsvp($event)" />
+          </nz-card>
+        }
+
+        <nz-card class="block" nzTitle="Bình chọn suất chiếu" [nzExtra]="proposeButton">
+          @if (optionsWithSummary().length === 0) {
+            <nz-empty nzNotFoundContent="Chưa có suất nào được đề xuất" />
+          }
+          @for (o of optionsWithSummary(); track o.id) {
+            <div class="option">
+              <div class="option-info">
+                <div>
+                  <strong>{{ o.showtime.startAt | date: 'HH:mm · EEE dd/MM' : vn }}</strong>
+                  · {{ o.showtime.cinemaName }} · {{ formatLabels[o.showtime.format] }}
+                </div>
+                <div class="muted small">
+                  {{ o.votes }} phiếu
+                  @if (o.voters.length) {
+                    ({{ o.voters.join(', ') }})
+                  }
+                </div>
+                @if (o.summary; as s) {
+                  <div class="small">
+                    <nz-tag [nzColor]="clusterLabels[s.cluster].color">{{ clusterLabels[s.cluster].text }}</nz-tag>
+                    @if (s.cluster !== 'UNAVAILABLE') {
+                      <span class="muted">còn {{ s.availablePlaces }} chỗ trống</span>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="option-actions">
+                <button nz-button [nzType]="o.votedByMe ? 'primary' : 'default'" [disabled]="store.busy()" (click)="toggleVote(o.id, o.votedByMe)">
+                  {{ o.votedByMe ? 'Đã bầu' : 'Bầu' }}
+                </button>
+                @if (store.isLeader()) {
+                  <button nz-button nzType="primary" nzGhost [disabled]="o.summary?.cluster === 'UNAVAILABLE'" (click)="openLock(o.id)">Chốt suất này</button>
+                }
+                @if (store.isLeader() || o.proposedBy === store.myUserId()) {
+                  <button nz-button nzType="text" nzDanger [disabled]="store.busy()" (click)="removeOption(o.id)">Bỏ</button>
+                }
+              </div>
+            </div>
+          }
+        </nz-card>
+        <ng-template #proposeButton>
+          <button nz-button (click)="openPropose()">Đề xuất suất</button>
+        </ng-template>
+      }
+    </div>
+
+    <!-- Thành viên -->
+    <aside class="side">
+      <nz-card nzTitle="Thành viên" class="block">
+        @for (m of g.members; track m.userId) {
+          <div class="member">
+            <div class="member-info">
+              <div>
+                {{ m.fullName }}
+                @if (m.role === 'LEADER') {
+                  <nz-tag nzColor="purple">Trưởng nhóm</nz-tag>
+                }
+              </div>
+              <div class="small">
+                <nz-tag [nzColor]="rsvpColors[m.rsvp]">{{ rsvpLabels[m.rsvp] }}</nz-tag>
+                @if (m.guestCount > 0) {
+                  <span class="muted">+{{ m.guestCount }} khách</span>
+                }
+                @if (m.maxBudget) {
+                  <span class="muted">· ≤ {{ m.maxBudget | vnd }}</span>
+                }
+              </div>
+            </div>
+            @if (store.isLeader() && m.role !== 'LEADER' && (g.status === 'OPEN' || g.status === 'LOCKED')) {
+              <button nz-button nzType="text" nzSize="small" nz-dropdown [nzDropdownMenu]="memberMenu" aria-label="Thao tác với thành viên">⋯</button>
+              <nz-dropdown-menu #memberMenu="nzDropdownMenu">
+                <ul nz-menu>
+                  <li nz-menu-item tabindex="0" (click)="makeLeader(m)" (keyup.enter)="makeLeader(m)">Chuyển trưởng nhóm</li>
+                  <li nz-menu-item nzDanger tabindex="0" (click)="removeMember(m)" (keyup.enter)="removeMember(m)">Mời ra khỏi nhóm</li>
+                </ul>
+              </nz-dropdown-menu>
+            }
+          </div>
+        }
+      </nz-card>
+
+      @if (g.status === 'OPEN' || g.status === 'LOCKED' || g.status === 'HOLDING') {
+        @if (store.isLeader()) {
+          <button nz-button nzDanger nzBlock (click)="cancelGroup()">Hủy nhóm</button>
+        } @else if (g.status !== 'HOLDING') {
+          <button nz-button nzBlock (click)="leave()">Rời nhóm</button>
+        }
+      }
+    </aside>
+  </div>
+
+  <!-- Đề xuất suất -->
+  <nz-modal [nzVisible]="proposeOpen()" nzTitle="Đề xuất suất chiếu" [nzFooter]="null" (nzOnCancel)="proposeOpen.set(false)" [nzWidth]="640">
+    <ng-container *nzModalContent>
+      @if (days().length === 0) {
+        <nz-empty nzNotFoundContent="Khoảng ngày của nhóm không còn ngày nào để chọn" />
+      } @else {
+        <app-day-tabs [days]="days()" [selected]="selectedDay()" (selectedChange)="selectDay($event)" />
+        @if (store.showtimes(); as list) {
+          @if (list.length === 0) {
+            <nz-empty nzNotFoundContent="Không có suất chiếu trong ngày" />
+          }
+          <div class="showtime-list">
+            @for (s of list; track s.id) {
+              <button nz-button class="showtime" [disabled]="isProposed(s.id) || store.busy()" (click)="propose(s.id)">
+                <strong>{{ s.startAt | date: 'HH:mm' : vn }}</strong>
+                <span>{{ s.cinemaName }} · {{ formatLabels[s.format] }} · còn {{ s.availableSeats }} ghế</span>
+                @if (isProposed(s.id)) {
+                  <span class="muted">(đã đề xuất)</span>
+                }
+              </button>
+            }
+          </div>
+        } @else {
+          <nz-skeleton [nzActive]="true" />
+        }
+      }
+    </ng-container>
+  </nz-modal>
+
+  <!-- Chốt suất -->
+  <nz-modal
+    [nzVisible]="lockOptionId() !== null"
+    nzTitle="Chốt suất & số vé"
+    nzOkText="Chốt"
+    [nzOkLoading]="store.busy()"
+    (nzOnOk)="confirmLock()"
+    (nzOnCancel)="lockOptionId.set(null)"
+  >
+    <ng-container *nzModalContent>
+      <p>
+        Theo phản hồi, nhóm cần <strong>{{ store.summary()?.ticketCount ?? 0 }}</strong> vé (thành viên "Tham gia" + khách đi kèm).
+        Sau khi chốt, nhóm không nhận thêm thành viên và bạn có thể chọn ghế.
+      </p>
+      <label for="lock-tickets">Số vé</label>
+      <nz-input-number id="lock-tickets" [(ngModel)]="lockTickets" [nzMin]="1" [nzMax]="20" class="lock-input" />
+    </ng-container>
+  </nz-modal>
+} @else if (!store.notFound()) {
+  <nz-skeleton [nzActive]="true" [nzParagraph]="{ rows: 10 }" />
+}

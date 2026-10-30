@@ -27,6 +27,8 @@ app:
   booking:
     # Test gọi HoldService.expire trực tiếp với đồng hồ giả, không chạy job nền
     expiry-job-enabled: false
+  group:
+    deadline-job-enabled: false
 
 logging:
   level:

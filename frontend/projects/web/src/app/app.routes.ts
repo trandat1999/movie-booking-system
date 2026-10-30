@@ -26,7 +26,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/account/account.routes').then((m) => m.ACCOUNT_ROUTES),
       },
       { path: '', loadChildren: () => import('./features/booking/booking.routes').then((m) => m.BOOKING_ROUTES) },
-      // M5+: group
+      {
+        path: 'groups',
+        canActivate: [authGuard],
+        loadChildren: () => import('./features/group/group.routes').then((m) => m.GROUP_ROUTES),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

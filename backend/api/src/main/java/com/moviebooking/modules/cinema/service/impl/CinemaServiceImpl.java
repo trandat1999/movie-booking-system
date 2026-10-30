@@ -97,6 +97,12 @@ public class CinemaServiceImpl implements CinemaService {
         cinema.setStatus(request.status());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Cinema getEntity(Long id) {
+        return find(id);
+    }
+
     private Cinema find(Long id) {
         return cinemaRepository.findById(id).orElseThrow(() -> new BusinessException(ErrorCode.CINEMA_NOT_FOUND));
     }

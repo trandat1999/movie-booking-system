@@ -28,7 +28,13 @@ public enum SettingKey {
     SALE_CLOSE_AFTER_START_MIN(
             "sale_close_after_start_min", "Lịch chiếu", "Ngừng bán vé sau khi suất bắt đầu (phút)", 0, 60),
     CANCEL_BEFORE_HOURS("cancel_before_hours", "Hủy & hoàn tiền", "Được hủy vé nếu trước giờ chiếu ít nhất (giờ)", 0, 168),
-    REFUND_PERCENT("refund_percent", "Hủy & hoàn tiền", "Tỷ lệ hoàn tiền khi hủy hợp lệ (%)", 0, 100);
+    REFUND_PERCENT("refund_percent", "Hủy & hoàn tiền", "Tỷ lệ hoàn tiền khi hủy hợp lệ (%)", 0, 100),
+    SEAT_WEIGHT_CENTER("seat_weight_center", "Thuật toán cụm ghế", "Trọng số: gần vị trí xem đẹp", 0, 100),
+    SEAT_WEIGHT_ROWS("seat_weight_rows", "Thuật toán cụm ghế", "Trọng số: phải chia nhiều hàng", 0, 100),
+    SEAT_WEIGHT_ALIGN("seat_weight_align", "Thuật toán cụm ghế", "Trọng số: lệch cột giữa các hàng", 0, 100),
+    SEAT_WEIGHT_ORPHAN("seat_weight_orphan", "Thuật toán cụm ghế", "Trọng số: tạo ghế lẻ", 0, 100),
+    SEAT_WEIGHT_PRICE("seat_weight_price", "Thuật toán cụm ghế", "Trọng số: vượt ngân sách", 0, 100),
+    SEAT_WEIGHT_WASTE("seat_weight_waste", "Thuật toán cụm ghế", "Trọng số: thừa chỗ do ghế đôi", 0, 100);
 
     private final String key;
     private final String group;

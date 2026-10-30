@@ -2,6 +2,7 @@ package com.moviebooking.modules.showtime.service;
 
 import com.moviebooking.modules.showtime.entity.Showtime;
 import com.moviebooking.modules.showtime.enums.ShowtimeSeatStatus;
+import com.moviebooking.seatengine.SeatLayout;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -20,6 +21,17 @@ public interface ShowtimeSeatService {
      * @throws com.moviebooking.exception.BusinessException SHOWTIME_NOT_FOUND nếu không còn bán
      */
     Showtime getBookable(Long showtimeId);
+
+    /** Suất chiếu kèm phim, phòng, rạp, giá — không kiểm tra còn bán (để hiển thị lịch sử). */
+    Showtime getShowtime(Long showtimeId);
+
+    /**
+     * Sơ đồ ghế của suất còn bán vé ở dạng đầu vào của thuật toán cụm ghế ({@code seat-engine}): mỗi ghế kèm
+     * sức chứa (ghế đôi = 2), giá đã chốt của suất và trạng thái trống hiệu lực.
+     *
+     * @throws com.moviebooking.exception.BusinessException SHOWTIME_NOT_FOUND nếu suất không còn bán
+     */
+    SeatLayout seatLayout(Long showtimeId);
 
     /** seatId → trạng thái hiệu lực (ghế giữ quá hạn coi là AVAILABLE). */
     Map<Long, ShowtimeSeatStatus> getStates(Long showtimeId);

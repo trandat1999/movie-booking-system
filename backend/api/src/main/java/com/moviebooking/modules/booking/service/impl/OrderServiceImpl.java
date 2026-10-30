@@ -81,6 +81,7 @@ public class OrderServiceImpl implements OrderService {
         order.setUserId(userId);
         order.setShowtime(showtime);
         order.setHoldId(holdId);
+        order.setGroupId(hold.getGroupId());
         order.setExpiresAt(hold.getExpiresAt());
         seatIds.stream()
                 .map(roomSeats::get)
@@ -156,6 +157,45 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
+    public Long findIdByCode(String code) {
+        return orderRepository
+                .findByCode(code)
+                .map(Order::getId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderSummaryResponse findSummary(Long orderId) {
+        return orderRepository
+                .findById(orderId)
+                .map(views::summary)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderTicket> ticketsOfOrder(Long orderId) {
+        return ticketRepository.findByOrderIdOrderByIdAsc(orderId).stream()
+                .map(t -> new OrderTicket(
+                        t.getId(), t.getCode(), t.getSeatId(), t.getSeatLabel(), t.getHolderUserId(), t.getHolderName()))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void assignTicketHolders(Long orderId, Map<Long, TicketHolder> holders) {
+        for (Ticket ticket : ticketRepository.findByOrderIdOrderByIdAsc(orderId)) {
+            TicketHolder holder = holders.get(ticket.getId());
+            if (holder != null) {
+                ticket.setHolderUserId(holder.userId());
+                ticket.setHolderName(holder.name());
+            }
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public PaymentTarget getPayable(Long userId, String code) {
         Order order = orderRepository
                 .findByCode(code)
@@ -224,6 +264,7 @@ public class OrderServiceImpl implements OrderService {
             if (hold.getStatus() == HoldStatus.ACTIVE) {
                 hold.setStatus(HoldStatus.EXPIRED);
                 showtimeSeatService.release(showtimeId, hold.getId());
+                transitions.publishIfGroupHold(hold);
             }
             transitions.changeStatus(order, OrderStatus.REFUND_PENDING, "PAID_SEATS_UNAVAILABLE", null, data);
         }

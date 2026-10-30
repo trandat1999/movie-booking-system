@@ -2,7 +2,10 @@ package com.moviebooking.modules.showtime.service.impl;
 
 import com.moviebooking.exception.BusinessException;
 import com.moviebooking.exception.ErrorCode;
+import com.moviebooking.modules.cinema.entity.SeatType;
 import com.moviebooking.modules.cinema.enums.CinemaStatus;
+import com.moviebooking.modules.cinema.service.RoomService;
+import com.moviebooking.modules.cinema.service.SeatTypeService;
 import com.moviebooking.modules.setting.enums.SettingKey;
 import com.moviebooking.modules.setting.service.SettingService;
 import com.moviebooking.modules.showtime.entity.Showtime;
@@ -20,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import com.moviebooking.seatengine.SeatLayout;
+import com.moviebooking.seatengine.SeatSpec;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -32,6 +37,8 @@ public class ShowtimeSeatServiceImpl implements ShowtimeSeatService {
     private final ShowtimeRepository showtimeRepository;
     private final ShowtimeSeatRepository showtimeSeatRepository;
     private final SettingService settingService;
+    private final RoomService roomService;
+    private final SeatTypeService seatTypeService;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
@@ -51,6 +58,36 @@ public class ShowtimeSeatServiceImpl implements ShowtimeSeatService {
             throw new BusinessException(ErrorCode.SHOWTIME_NOT_FOUND);
         }
         return showtime;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Showtime getShowtime(Long showtimeId) {
+        return showtimeRepository
+                .findWithDetailsById(showtimeId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SHOWTIME_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SeatLayout seatLayout(Long showtimeId) {
+        Showtime showtime = getBookable(showtimeId);
+        Map<Long, ShowtimeSeatStatus> states = getStates(showtimeId);
+        Map<String, SeatType> types = seatTypeService.getAll();
+        List<SeatSpec> seats = roomService.listSeats(showtime.getRoom().getId()).stream()
+                .map(seat -> new SeatSpec(
+                        seat.getId(),
+                        seat.getRowLabel(),
+                        seat.getNumber(),
+                        seat.getGridRow(),
+                        seat.getGridCol(),
+                        seat.getColSpan(),
+                        types.containsKey(seat.getSeatTypeCode()) ? types.get(seat.getSeatTypeCode()).getCapacity() : 1,
+                        seat.getSeatTypeCode(),
+                        showtime.getPrices().getOrDefault(seat.getSeatTypeCode(), 0L),
+                        states.get(seat.getId()) == ShowtimeSeatStatus.AVAILABLE))
+                .toList();
+        return new SeatLayout(showtime.getRoom().getGridRows(), showtime.getRoom().getGridCols(), seats);
     }
 
     @Override

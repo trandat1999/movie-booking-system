@@ -140,7 +140,9 @@ export interface GridCell {
     }
 
     .state-held {
-      background: #faad14;
+      background: repeating-linear-gradient(45deg, #ffc069, #ffc069 3px, #fff1d6 3px, #fff1d6 6px);
+      color: #874d00;
+      cursor: not-allowed;
     }
 
     .state-sold {

@@ -17,12 +17,12 @@ public interface SeatHoldRepository extends JpaRepository<SeatHold, Long> {
     @Query("select h from SeatHold h where h.id = :id")
     Optional<SeatHold> findForUpdate(@Param("id") Long id);
 
-    @Query("select h.id from SeatHold h where h.userId = :userId and h.showtimeId = :showtimeId "
+    @Query("select h.id from SeatHold h where h.userId = :userId and h.showtimeId = :showtimeId and h.groupId is null "
             + "and h.status = com.moviebooking.modules.booking.enums.HoldStatus.ACTIVE")
     List<Long> findActiveIds(@Param("userId") Long userId, @Param("showtimeId") Long showtimeId);
 
-    /** Số lượt giữ còn hiệu lực của người dùng (BR15). */
-    @Query("select count(h) from SeatHold h where h.userId = :userId "
+    /** Số lượt giữ cá nhân còn hiệu lực của người dùng (BR15) — lượt giữ của nhóm không tính. */
+    @Query("select count(h) from SeatHold h where h.userId = :userId and h.groupId is null "
             + "and h.status = com.moviebooking.modules.booking.enums.HoldStatus.ACTIVE and h.expiresAt > :now")
     long countActive(@Param("userId") Long userId, @Param("now") Instant now);
 

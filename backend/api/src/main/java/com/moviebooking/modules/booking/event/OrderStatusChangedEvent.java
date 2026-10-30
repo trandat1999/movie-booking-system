@@ -2,5 +2,11 @@ package com.moviebooking.modules.booking.event;
 
 import com.moviebooking.modules.booking.enums.OrderStatus;
 
-/** Phát khi đơn đổi trạng thái; listener xử lý sau commit (thông báo, email, realtime). */
-public record OrderStatusChangedEvent(Long orderId, String orderCode, Long userId, OrderStatus from, OrderStatus to) {}
+/**
+ * Phát khi đơn đổi trạng thái, trong transaction. Listener {@code AFTER_COMMIT} lo thông báo/email/realtime;
+ * module nhóm nghe đồng bộ để cập nhật trạng thái nhóm trong cùng transaction.
+ *
+ * @param groupId khác null nếu là đơn của nhóm
+ */
+public record OrderStatusChangedEvent(
+        Long orderId, String orderCode, Long userId, Long groupId, OrderStatus from, OrderStatus to) {}

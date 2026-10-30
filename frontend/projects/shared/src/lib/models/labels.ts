@@ -9,6 +9,7 @@ import {
   ShowtimePhase,
 } from './catalog.model';
 import { OrderStatus, TicketStatus } from './booking.model';
+import { GroupStatus, Rsvp } from './group.model';
 
 /** Nhãn tiếng Việt cho các enum hiển thị trên giao diện. */
 
@@ -106,6 +107,40 @@ export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
   VALID: 'Còn hiệu lực',
   USED: 'Đã sử dụng',
   CANCELLED: 'Đã hủy',
+};
+
+export const GROUP_STATUS_LABELS: Record<GroupStatus, string> = {
+  OPEN: 'Đang lên kế hoạch',
+  LOCKED: 'Đã chốt suất',
+  HOLDING: 'Đang giữ ghế',
+  BOOKED: 'Đã đặt vé',
+  COMPLETED: 'Hoàn tất',
+  EXPIRED: 'Hết hạn',
+  CANCELLED: 'Đã hủy',
+};
+
+export const GROUP_STATUS_COLORS: Record<GroupStatus, string> = {
+  OPEN: 'blue',
+  LOCKED: 'gold',
+  HOLDING: 'orange',
+  BOOKED: 'green',
+  COMPLETED: 'cyan',
+  EXPIRED: 'default',
+  CANCELLED: 'default',
+};
+
+export const RSVP_LABELS: Record<Rsvp, string> = {
+  PENDING: 'Chưa phản hồi',
+  YES: 'Tham gia',
+  NO: 'Không tham gia',
+  MAYBE: 'Chưa chắc',
+};
+
+export const RSVP_COLORS: Record<Rsvp, string> = {
+  PENDING: 'default',
+  YES: 'green',
+  NO: 'red',
+  MAYBE: 'gold',
 };
 
 /** Danh sách lựa chọn cho nz-select từ một bảng nhãn. */

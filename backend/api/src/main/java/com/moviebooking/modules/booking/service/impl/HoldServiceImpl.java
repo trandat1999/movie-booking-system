@@ -20,6 +20,7 @@ import com.moviebooking.modules.showtime.service.ShowtimeSeatService;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -127,6 +128,51 @@ public class HoldServiceImpl implements HoldService {
         long total = lines.stream().mapToLong(SeatLine::price).sum();
         return new HoldResponse(
                 hold.getId(), showtime.getId(), hold.getExpiresAt(), lines, total, warnings, clock.instant());
+    }
+
+    @Override
+    @Transactional
+    public GroupHold holdForGroup(Long leaderId, Long groupId, Long showtimeId, Collection<Long> seatIds) {
+        Showtime showtime = showtimeSeatService.getBookable(showtimeId);
+        Set<Long> ids = new LinkedHashSet<>(seatIds);
+        Set<Long> roomSeatIds = roomService.listSeats(showtime.getRoom().getId()).stream()
+                .map(Seat::getId)
+                .collect(Collectors.toSet());
+        if (ids.isEmpty() || !roomSeatIds.containsAll(ids)) {
+            throw new BusinessException(ErrorCode.SEAT_UNAVAILABLE);
+        }
+        SeatHold hold = new SeatHold();
+        hold.setUserId(leaderId);
+        hold.setGroupId(groupId);
+        hold.setShowtimeId(showtimeId);
+        hold.setExpiresAt(clock.instant().plusSeconds(settingService.getInt(SettingKey.HOLD_TTL_GROUP_SEC)));
+        seatHoldRepository.saveAndFlush(hold);
+        List<Long> held = showtimeSeatService.hold(showtimeId, ids, hold.getId(), hold.getExpiresAt());
+        if (held.size() != ids.size()) {
+            Set<Long> lost = new LinkedHashSet<>(ids);
+            held.forEach(lost::remove);
+            throw new BusinessException(
+                    ErrorCode.SEAT_UNAVAILABLE, ErrorCode.SEAT_UNAVAILABLE.getDefaultMessage(), Map.of("seatIds", lost));
+        }
+        return new GroupHold(hold.getId(), hold.getExpiresAt());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Optional<ActiveHold> findActive(Long holdId) {
+        Instant now = clock.instant();
+        return seatHoldRepository
+                .findById(holdId)
+                .filter(hold -> hold.isActiveAt(now))
+                .map(hold -> new ActiveHold(
+                        hold.getId(), hold.getExpiresAt(), showtimeSeatService.seatIdsOfHold(hold.getId())));
+    }
+
+    @Override
+    @Transactional
+    public void releaseGroupHold(Long holdId, Long actorId) {
+        transitions.closeHold(
+                holdId, null, null, HoldStatus.RELEASED, OrderStatus.CANCELLED, "GROUP_HOLD_RELEASED", actorId);
     }
 
     @Override
