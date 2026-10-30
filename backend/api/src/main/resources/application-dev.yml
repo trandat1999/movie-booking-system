@@ -4,6 +4,10 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:moviebooking}
     username: ${DB_USERNAME:moviebooking}
     password: ${DB_PASSWORD:moviebooking}
+  # Mailpit trong docker-compose; bật gửi thật bằng MAIL_ENABLED=true
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -25,3 +29,8 @@ app:
       secret: ${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWtleS1mb3Itand0LXNpZ25pbmctbW92aWUtYm9va2luZy1sb2NhbA==}
     # Dev chạy HTTP nên cookie không đặt cờ Secure
     refresh-cookie-secure: false
+  ticket:
+    secret: ${TICKET_SECRET:dev-only-ticket-secret}
+  payment:
+    mock:
+      secret: ${MOCK_PAYMENT_SECRET:dev-only-mock-payment-secret}

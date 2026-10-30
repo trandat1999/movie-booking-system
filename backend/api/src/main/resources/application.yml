@@ -32,6 +32,10 @@ server:
   port: ${SERVER_PORT:8080}
 
 management:
+  health:
+    # SMTP chỉ dùng để gửi email (tác dụng phụ) — không làm health DOWN khi Mailpit không chạy
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:
@@ -55,3 +59,14 @@ app:
     refresh-token-reuse-grace: 30s
     refresh-cookie-name: mb_refresh
     refresh-cookie-secure: ${REFRESH_COOKIE_SECURE:true}
+  ticket:
+    # Khóa ký mã QR của vé — bắt buộc đặt TICKET_SECRET ngoài dev/test
+    secret: ${TICKET_SECRET:}
+  payment:
+    mock:
+      secret: ${MOCK_PAYMENT_SECRET:}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+  rate-limit:
+    login-per-minute: 10
+    hold-per-minute: 20

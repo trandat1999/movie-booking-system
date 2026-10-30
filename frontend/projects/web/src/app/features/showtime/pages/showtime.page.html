@@ -33,6 +33,7 @@
         @for (t of map.seatTypes; track t.code) {
           <span class="item"><i [style.background]="t.color"></i>{{ t.name }} · {{ t.price | vnd }}</span>
         }
+        <span class="item"><i class="selected"></i>Ghế bạn chọn</span>
         <span class="item"><i class="held"></i>Đang được giữ</span>
         <span class="item"><i class="sold"></i>Đã bán</span>
         <span class="item"><i class="blocked"></i>Không bán</span>
@@ -45,9 +46,38 @@
         [cellSize]="cellSize()"
         (seatClick)="onSeat($event)"
       />
-      <p class="note">Giá ghế đôi là giá cho cả ghế (2 người).</p>
+      <p class="note">Giá ghế đôi là giá cho cả ghế (2 người). Sơ đồ tự cập nhật khi có người khác giữ/mua ghế.</p>
     }
   </nz-card>
+
+  <div class="booking-bar" [class.active]="store.selectedSeats().length > 0">
+    @if (bookingError(); as error) {
+      <nz-alert nzType="error" nzShowIcon [nzMessage]="error" class="bar-alert" />
+    }
+    <div class="bar-content">
+      <div class="bar-info">
+        @if (store.selectedSeats().length > 0) {
+          <div>
+            <span class="muted">Ghế:</span> <strong>{{ selectedLabels() }}</strong>
+            <button nz-button nzType="link" nzSize="small" (click)="store.clearSelection()">Bỏ chọn</button>
+          </div>
+          <div class="total">{{ store.total() | vnd }}</div>
+        } @else {
+          <span class="muted">Chọn ghế trên sơ đồ để đặt vé</span>
+        }
+      </div>
+      <button
+        nz-button
+        nzType="primary"
+        nzSize="large"
+        [disabled]="store.selectedSeats().length === 0"
+        [nzLoading]="store.submitting()"
+        (click)="continueBooking()"
+      >
+        Tiếp tục
+      </button>
+    </div>
+  </div>
   <ng-template #zoomControls>
     <button nz-button nzSize="small" (click)="zoom(-4)" aria-label="Thu nhỏ sơ đồ">−</button>
     <button nz-button nzSize="small" (click)="zoom(4)" aria-label="Phóng to sơ đồ" class="zoom-in">+</button>

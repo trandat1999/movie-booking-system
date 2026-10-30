@@ -62,6 +62,21 @@ public enum ErrorCode {
     HOLIDAY_ALREADY_EXISTS(HttpStatus.CONFLICT, "Ngày lễ đã tồn tại"),
     HOLIDAY_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy ngày lễ"),
 
+    // Giữ ghế & đặt vé (M4)
+    SHOWTIME_NOT_BOOKABLE(HttpStatus.CONFLICT, "Suất chiếu không còn bán vé"),
+    SEAT_UNAVAILABLE(HttpStatus.CONFLICT, "Một số ghế vừa được người khác chọn, vui lòng chọn ghế khác"),
+    ORPHAN_SEAT(HttpStatus.BAD_REQUEST, "Không được để trống một ghế lẻ cạnh ghế bạn chọn"),
+    TOO_MANY_SEATS(HttpStatus.BAD_REQUEST, "Vượt quá số ghế tối đa cho một đơn"),
+    TOO_MANY_ACTIVE_HOLDS(HttpStatus.CONFLICT, "Bạn đang giữ ghế ở quá nhiều suất chiếu, hãy hoàn tất hoặc hủy bớt"),
+    HOLD_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy lượt giữ ghế"),
+    HOLD_EXPIRED(HttpStatus.CONFLICT, "Đã hết thời gian giữ ghế, vui lòng chọn lại"),
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng"),
+    ORDER_NOT_PAYABLE(HttpStatus.CONFLICT, "Đơn hàng không ở trạng thái chờ thanh toán hoặc đã hết hạn"),
+    ORDER_NOT_CANCELLABLE(HttpStatus.CONFLICT, "Đơn hàng không thể hủy ở trạng thái hiện tại"),
+    PAYMENT_PROVIDER_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "Phương thức thanh toán không được hỗ trợ"),
+    INVALID_PAYMENT_SIGNATURE(HttpStatus.BAD_REQUEST, "Chữ ký thanh toán không hợp lệ"),
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy thông báo"),
+
     // Cấu hình (M2)
     SETTING_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy tham số cấu hình"),
     INVALID_SETTING_VALUE(HttpStatus.BAD_REQUEST, "Giá trị cấu hình không hợp lệ");

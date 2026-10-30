@@ -8,6 +8,7 @@ import {
   ScreenFormat,
   ShowtimePhase,
 } from './catalog.model';
+import { OrderStatus, TicketStatus } from './booking.model';
 
 /** Nhãn tiếng Việt cho các enum hiển thị trên giao diện. */
 
@@ -79,6 +80,32 @@ export const PHASE_COLORS: Record<ShowtimePhase, string> = {
   ONGOING: 'green',
   ENDED: 'default',
   CANCELLED: 'red',
+};
+
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  PENDING_PAYMENT: 'Chờ thanh toán',
+  PAID: 'Đã thanh toán',
+  EXPIRED: 'Hết hạn',
+  CANCELLED: 'Đã hủy',
+  REFUND_PENDING: 'Chờ hoàn tiền',
+  REFUNDED: 'Đã hoàn tiền',
+  COMPLETED: 'Hoàn tất',
+};
+
+export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
+  PENDING_PAYMENT: 'gold',
+  PAID: 'green',
+  EXPIRED: 'default',
+  CANCELLED: 'default',
+  REFUND_PENDING: 'orange',
+  REFUNDED: 'purple',
+  COMPLETED: 'blue',
+};
+
+export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
+  VALID: 'Còn hiệu lực',
+  USED: 'Đã sử dụng',
+  CANCELLED: 'Đã hủy',
 };
 
 /** Danh sách lựa chọn cho nz-select từ một bảng nhãn. */

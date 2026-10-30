@@ -10,6 +10,41 @@
     </ul>
 
     @if (auth.user(); as user) {
+      <a
+        nz-dropdown
+        [nzDropdownMenu]="notificationMenu"
+        nzTrigger="click"
+        nzPlacement="bottomRight"
+        class="bell"
+        aria-label="Thông báo"
+        (nzVisibleChange)="$event && notifications.refresh()"
+      >
+        <nz-badge [nzCount]="notifications.unread()" nzSize="small">
+          <nz-icon nzType="bell" class="bell-icon" />
+        </nz-badge>
+      </a>
+      <nz-dropdown-menu #notificationMenu="nzDropdownMenu">
+        <div class="notification-panel">
+          <div class="panel-header">
+            <strong>Thông báo</strong>
+            @if (notifications.unread() > 0) {
+              <button nz-button nzType="link" nzSize="small" (click)="notifications.markAllRead()">Đánh dấu đã đọc</button>
+            }
+          </div>
+          @for (n of notifications.latest(); track n.id) {
+            <button type="button" class="notification" [class.unread]="!n.readAt" (click)="open(n)">
+              <span class="n-title">{{ n.title }}</span>
+              @if (n.body) {
+                <span class="n-body">{{ n.body }}</span>
+              }
+              <span class="n-time">{{ n.createdAt | date: 'HH:mm dd/MM' : vn }}</span>
+            </button>
+          } @empty {
+            <div class="empty">Chưa có thông báo</div>
+          }
+        </div>
+      </nz-dropdown-menu>
+
       <a nz-dropdown [nzDropdownMenu]="accountMenu" nzPlacement="bottomRight" class="account-trigger">
         <nz-icon nzType="user" />
         <span class="account-name">{{ user.fullName }}</span>
@@ -17,6 +52,8 @@
       </a>
       <nz-dropdown-menu #accountMenu="nzDropdownMenu">
         <ul nz-menu>
+          <li nz-menu-item routerLink="/account/tickets"><nz-icon nzType="qrcode" /> Vé của tôi</li>
+          <li nz-menu-item routerLink="/account/orders"><nz-icon nzType="history" /> Lịch sử đơn hàng</li>
           <li nz-menu-item routerLink="/account"><nz-icon nzType="idcard" /> Tài khoản của tôi</li>
           <li nz-menu-divider></li>
           <li nz-menu-item tabindex="0" (click)="logout()" (keyup.enter)="logout()"><nz-icon nzType="logout" /> Đăng xuất</li>

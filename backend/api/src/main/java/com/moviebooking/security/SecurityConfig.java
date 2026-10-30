@@ -27,7 +27,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
-        "/actuator/health/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+        "/actuator/health/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+        // Handshake WebSocket; xác thực ở frame CONNECT (StompAuthChannelInterceptor)
+        "/ws", "/ws/**"
     };
 
     private static final String[] PUBLIC_GET_ENDPOINTS = {
@@ -59,6 +61,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth.requestMatchers(PUBLIC_ENDPOINTS)
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**")
+                        .permitAll()
+                        // IPN của cổng thanh toán: xác thực bằng chữ ký của cổng, không phải JWT
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/ipn")
                         .permitAll()
                         // Tra cứu công khai: phim, rạp, lịch chiếu, sơ đồ ghế (M3)
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS)

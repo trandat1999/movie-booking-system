@@ -15,6 +15,18 @@ app:
       # Khóa chỉ dùng cho test
       secret: dGVzdC1vbmx5LXNlY3JldC1rZXktZm9yLWp3dC1zaWduaW5nLW1vdmllLWJvb2tpbmctMjAyNg==
     refresh-cookie-secure: false
+  ticket:
+    secret: test-ticket-secret
+  payment:
+    mock:
+      secret: test-mock-payment-secret
+  # Test gọi đăng nhập/giữ ghế rất nhiều lần từ cùng IP
+  rate-limit:
+    login-per-minute: 100000
+    hold-per-minute: 100000
+  booking:
+    # Test gọi HoldService.expire trực tiếp với đồng hồ giả, không chạy job nền
+    expiry-job-enabled: false
 
 logging:
   level:

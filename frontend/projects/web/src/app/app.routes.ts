@@ -25,7 +25,8 @@ export const routes: Routes = [
         canActivate: [authGuard],
         loadChildren: () => import('./features/account/account.routes').then((m) => m.ACCOUNT_ROUTES),
       },
-      // M4+: booking, group, notifications
+      { path: '', loadChildren: () => import('./features/booking/booking.routes').then((m) => m.BOOKING_ROUTES) },
+      // M5+: group
     ],
   },
   { path: '**', redirectTo: '' },

@@ -3,6 +3,8 @@ package com.moviebooking.modules.auth.controller;
 import com.moviebooking.common.response.ApiError;
 import com.moviebooking.common.response.ApiResponse;
 import com.moviebooking.common.web.ClientInfo;
+import com.moviebooking.infrastructure.ratelimit.RateLimitProperties;
+import com.moviebooking.infrastructure.ratelimit.RateLimiter;
 import com.moviebooking.exception.BusinessException;
 import com.moviebooking.exception.ErrorCode;
 import com.moviebooking.modules.auth.dto.request.LoginRequest;
@@ -31,6 +33,8 @@ public class AuthController {
 
     private final AuthService authService;
     private final RefreshTokenCookies refreshTokenCookies;
+    private final RateLimiter rateLimiter;
+    private final RateLimitProperties rateLimitProperties;
 
     @Operation(summary = "Đăng ký tài khoản khách hàng và đăng nhập (USR01)")
     @PostMapping("/register")
@@ -44,7 +48,9 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
-        AuthResult result = authService.login(request, ClientInfo.from(httpRequest));
+        ClientInfo client = ClientInfo.from(httpRequest);
+        rateLimiter.check("login:" + client.ipAddress(), rateLimitProperties.loginPerMinute());
+        AuthResult result = authService.login(request, client);
         return withSession(HttpStatus.OK, result);
     }
 
