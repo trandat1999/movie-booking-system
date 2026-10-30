@@ -17,7 +17,9 @@ import {
   RSVP_COLORS,
   RSVP_LABELS,
   RsvpRequest,
+  SEAT_PREFERENCE_LABELS,
   SeatGridComponent,
+  SeatPreferenceRequest,
   SeatStatus,
   VN_OFFSET,
   VndPipe,
@@ -40,6 +42,7 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { CountdownComponent } from '../../../shared/components/countdown.component';
 import { DayTabsComponent } from '../../../shared/components/day-tabs.component';
 import { RsvpFormComponent } from '../components/rsvp-form.component';
+import { SeatPreferenceFormComponent } from '../components/seat-preference-form.component';
 import { GroupStore } from '../group.store';
 
 const CLUSTER_LABELS: Record<string, { text: string; color: string }> = {
@@ -82,6 +85,7 @@ const SEAT_STATE: Record<SeatStatus, GridSeatState> = {
     CountdownComponent,
     DayTabsComponent,
     RsvpFormComponent,
+    SeatPreferenceFormComponent,
   ],
   templateUrl: './group-detail.page.html',
   styleUrl: './group-detail.page.less',
@@ -98,6 +102,7 @@ export class GroupDetailPage {
   protected readonly statusLabels = GROUP_STATUS_LABELS;
   protected readonly statusColors = GROUP_STATUS_COLORS;
   protected readonly rsvpLabels = RSVP_LABELS;
+  protected readonly seatPreferenceLabels = SEAT_PREFERENCE_LABELS;
   protected readonly rsvpColors = RSVP_COLORS;
   protected readonly ratingColors = AGE_RATING_COLORS;
   protected readonly formatLabels = FORMAT_LABELS;
@@ -187,6 +192,15 @@ export class GroupDetailPage {
 
   protected saveRsvp(request: RsvpRequest): void {
     this.store.rsvp(request).subscribe(() => this.message.success('Đã lưu phản hồi'));
+  }
+
+  protected saveSeatPreference(request: SeatPreferenceRequest): void {
+    this.store.seatPreference(request).subscribe(() => this.message.success('Đã lưu sở thích chỗ ngồi'));
+  }
+
+  protected nextToName(member: GroupMemberView): string | null {
+    const id = member.nextToUserId;
+    return id == null ? null : (this.store.detail()?.members.find((m) => m.userId === id)?.fullName ?? null);
   }
 
   protected openPropose(): void {

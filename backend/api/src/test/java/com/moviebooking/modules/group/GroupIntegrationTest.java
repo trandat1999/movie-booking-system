@@ -346,6 +346,56 @@ class GroupIntegrationTest extends AbstractAdminIntegrationTest {
 
     // --- helpers ---
 
+    @Test
+    void ticketsAreDistributedBySeatPreferences() throws Exception {
+        long groupId = createGroup(leader, fixture);
+        String code = codeOf(groupId);
+        join(alice, code).andExpect(status().isOk());
+        join(bob, code).andExpect(status().isOk());
+        rsvp(alice, groupId, "YES", 0).andExpect(status().isOk());
+        rsvp(bob, groupId, "YES", 0).andExpect(status().isOk());
+        long leaderId = userId(leader);
+
+        // Không được chọn chính mình hoặc người ngoài nhóm
+        seatPreference(bob, groupId, "NONE", userId(bob)).andExpect(status().isNotFound());
+        seatPreference(bob, groupId, "NONE", userId(customer())).andExpect(status().isNotFound());
+        // Alice thích đầu dãy; Bob muốn ngồi cạnh trưởng nhóm
+        seatPreference(alice, groupId, "AISLE", null).andExpect(status().isOk());
+        seatPreference(bob, groupId, "NONE", leaderId)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.members[2].nextToUserId").value((int) leaderId));
+
+        lock(leader, groupId, 3).andExpect(status().isOk());
+        // A1 (sát tường = đầu dãy), A2, A3. Thứ tự mặc định trưởng nhóm A1, Alice A2, Bob A3 không đáp ứng ai
+        List<Integer> seats = List.of("A1", "A2", "A3").stream().map(l -> fixture.seats().get(l).intValue()).toList();
+        hold(leader, groupId, seats, null, null).andExpect(status().isOk());
+        String orderCode = string(perform(leader, post("/api/v1/groups/{id}/order", groupId)).andReturn(), "$.data.code");
+        ipn(startPayment(leader, orderCode)).andExpect(jsonPath("$.data.orderStatus").value("PAID"));
+
+        MvcResult booked = perform(leader, get("/api/v1/groups/{id}", groupId))
+                .andExpect(jsonPath("$.data.seating.satisfied").value(2))
+                .andExpect(jsonPath("$.data.seating.requested").value(2))
+                .andReturn();
+        String json = booked.getResponse().getContentAsString();
+        assertThat(JsonPath.<List<String>>read(json, "$.data.assignments[?(@.userId == " + userId(alice) + ")].seatLabel"))
+                .containsExactly("A1");
+        List<String> leaderSeat = JsonPath.read(json, "$.data.assignments[?(@.userId == " + leaderId + ")].seatLabel");
+        List<String> bobSeat = JsonPath.read(json, "$.data.assignments[?(@.userId == " + userId(bob) + ")].seatLabel");
+        assertThat(List.of(leaderSeat.get(0), bobSeat.get(0))).containsExactlyInAnyOrder("A2", "A3");
+
+        // Sau khi thanh toán không đổi sở thích được nữa
+        seatPreference(alice, groupId, "CENTER", null).andExpect(status().isConflict());
+    }
+
+    private ResultActions seatPreference(Session session, long groupId, String preference, Long nextTo) throws Exception {
+        Map<String, Object> body = new HashMap<>();
+        body.put("preference", preference);
+        body.put("nextToUserId", nextTo);
+        return perform(session, put("/api/v1/groups/{id}/seat-preference", groupId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(body)));
+    }
+
     private record Fixture(long showtimeId, long movieId, Map<String, Long> seats, long price) {
         Long seat(String label) {
             return seats.get(label);

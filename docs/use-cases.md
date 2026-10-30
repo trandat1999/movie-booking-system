@@ -83,6 +83,10 @@ flowchart LR
 | Quản trị danh mục, rạp, lịch chiếu, giá | MOVADM, CIN01–02, SCHADM01–04 | ✅ |
 | Quản trị đơn, nhóm, khuyến mãi, người dùng, cấu hình, nhật ký | ORDADM, GRPADM, PROADM, USRADM, SYS01–02 | ✅ |
 | Báo cáo | ADM01–03 | ✅ |
+| Sở thích chỗ ngồi trong nhóm | GRP22 | ✅ M10 |
+| Phim yêu thích, phim tương tự | MOV04, MOV05 | ✅ M10 |
+| Đánh giá phim (sau khi vé đã soát), kiểm duyệt | FBK01 | ✅ M10 |
+| Mô hình B, combo, điểm thưởng, MoMo | GRP23, BKG12, LOY01 | Hướng phát triển |
 
 ## 4. Đặc tả use case trọng tâm
 

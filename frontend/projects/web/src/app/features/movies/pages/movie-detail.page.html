@@ -52,11 +52,19 @@
       @if (movie.description) {
         <p class="description">{{ movie.description }}</p>
       }
-      @if (movie.status !== 'ENDED') {
-        <a nz-button nzType="primary" [routerLink]="['/groups/new']" [queryParams]="{ movieId: movie.id }">
-          Đặt vé theo nhóm
-        </a>
-      }
+      <div class="actions">
+        @if (movie.status !== 'ENDED') {
+          <a nz-button nzType="primary" [routerLink]="['/groups/new']" [queryParams]="{ movieId: movie.id }">
+            Đặt vé theo nhóm
+          </a>
+        }
+        @if (auth.user()) {
+          <button nz-button (click)="toggleFavorite()" [attr.aria-pressed]="store.favorite()">
+            <nz-icon [nzType]="'heart'" [nzTheme]="store.favorite() ? 'fill' : 'outline'" class="heart" />
+            {{ store.favorite() ? 'Đã yêu thích' : 'Yêu thích' }}
+          </button>
+        }
+      </div>
     </div>
   </section>
 
@@ -94,6 +102,29 @@
       }
     }
   </section>
+  <section>
+    <h2>Đánh giá</h2>
+    <app-movie-reviews
+      [reviews]="store.reviews()"
+      [mine]="store.myReview()"
+      [loggedIn]="!!auth.user()"
+      [saving]="store.savingReview()"
+      (save)="saveReview($event)"
+      (remove)="deleteReview()"
+      (pageChange)="store.loadReviews($event)"
+    />
+  </section>
+
+  @if (store.similar().length > 0) {
+    <section>
+      <h2>Phim tương tự</h2>
+      <div class="similar">
+        @for (m of store.similar(); track m.id) {
+          <app-movie-card [movie]="m" [showRelease]="m.status === 'COMING_SOON'" />
+        }
+      </div>
+    </section>
+  }
 } @else if (!store.notFound()) {
   <nz-skeleton [nzActive]="true" [nzParagraph]="{ rows: 8 }" />
 }

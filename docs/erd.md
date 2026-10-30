@@ -1,6 +1,6 @@
 # Sơ đồ thực thể – quan hệ (ERD)
 
-Nguồn sự thật của schema là các migration Flyway trong `backend/api/src/main/resources/db/migration`. Sơ đồ cập nhật theo từng giai đoạn; mọi bảng dưới đây đã có migration (V1–V9).
+Nguồn sự thật của schema là các migration Flyway trong `backend/api/src/main/resources/db/migration`. Sơ đồ cập nhật theo từng giai đoạn; mọi bảng dưới đây đã có migration (V1–V10).
 
 | Nhóm | Bảng | Trạng thái |
 |---|---|---|
@@ -12,6 +12,7 @@ Nguồn sự thật của schema là các migration Flyway trong `backend/api/sr
 | Bán vé | `seat_holds`, `orders`, `order_items`, `tickets`, `payments`, `order_events`, `notifications` | ✅ M4 (`V6__booking.sql`) · `refunds` ✅ M7 (`V8__refunds.sql`) |
 | Nhóm | `booking_groups`, `group_members`, `group_showtime_options`, `group_votes`, `group_seat_assignments`, `group_events`, `seat_suggestion_logs` | ✅ M6 (`V7__groups.sql`) |
 | Khuyến mãi | `promotions`, `promotion_usages` | ✅ M8 (`V9__promotions.sql`) |
+| Mở rộng | `favorite_movies`, `movie_reviews`; cột sở thích chỗ ngồi ở `group_members`, kết quả xếp chỗ ở `booking_groups` | ✅ M10 (`V10__extensions.sql`) |
 
 ## 1. Tài khoản, phân quyền, nhật ký (M1)
 
@@ -389,3 +390,32 @@ erDiagram
 ```
 
 `seat_suggestion_logs` là nguồn số liệu cho thống kê nhóm (ADM02): tỷ lệ tìm được cụm liền kề, phương án được chọn.
+
+## 6. Mở rộng (M10)
+
+```mermaid
+erDiagram
+    favorite_movies {
+        bigint user_id PK
+        bigint movie_id PK
+        timestamptz created_at
+    }
+    movie_reviews {
+        bigint id PK
+        bigint movie_id FK
+        bigint user_id FK "UK(movie_id, user_id)"
+        int rating "1–5"
+        varchar comment
+        boolean hidden "quản trị ẩn"
+    }
+    group_members {
+        varchar seat_preference "NONE | AISLE | CENTER"
+        bigint next_to_user_id FK "muốn ngồi cạnh"
+    }
+    users ||--o{ favorite_movies : ""
+    movies ||--o{ favorite_movies : ""
+    users ||--o{ movie_reviews : ""
+    movies ||--o{ movie_reviews : ""
+    users |o--o{ group_members : "ngồi cạnh"
+```
+

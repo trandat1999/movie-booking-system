@@ -6,6 +6,7 @@ import { AgeRating, AudioType, ScreenFormat } from './catalog.model';
 export type GroupStatus = 'OPEN' | 'LOCKED' | 'HOLDING' | 'BOOKED' | 'COMPLETED' | 'EXPIRED' | 'CANCELLED';
 export type GroupRole = 'LEADER' | 'MEMBER';
 export type Rsvp = 'PENDING' | 'YES' | 'NO' | 'MAYBE';
+export type SeatPreference = 'NONE' | 'AISLE' | 'CENTER';
 
 export interface GroupShowtimeInfo {
   id: number;
@@ -26,6 +27,8 @@ export interface GroupMemberView {
   guestCount: number;
   maxBudget: number | null;
   joinedAt: string;
+  seatPreference: SeatPreference;
+  nextToUserId: number | null;
 }
 
 export interface GroupOptionView {
@@ -90,6 +93,8 @@ export interface GroupDetail {
   shares: GroupShareView[];
   progress: GroupProgress;
   ageWarnings: string[];
+  /** Kết quả xếp chỗ tự động theo sở thích (GRP22) */
+  seating: { satisfied: number; requested: number } | null;
   serverTime: string;
 }
 
@@ -175,6 +180,11 @@ export interface CreateGroupRequest {
   dateFrom: string | null;
   dateTo: string | null;
   rsvpDeadline: string;
+}
+
+export interface SeatPreferenceRequest {
+  preference: SeatPreference;
+  nextToUserId: number | null;
 }
 
 export interface RsvpRequest {

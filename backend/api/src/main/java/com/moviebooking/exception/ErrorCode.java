@@ -115,6 +115,10 @@ public enum ErrorCode {
     PROMOTION_USED_UP(HttpStatus.CONFLICT, "Mã giảm giá đã hết lượt sử dụng"),
     INVALID_PROMOTION(HttpStatus.BAD_REQUEST, "Thông tin mã giảm giá không hợp lệ"),
 
+    // Đánh giá phim (M10)
+    REVIEW_NOT_ALLOWED(HttpStatus.FORBIDDEN, "Bạn chỉ đánh giá được phim đã xem tại rạp (vé đã soát)"),
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy đánh giá"),
+
     // Cấu hình (M2)
     SETTING_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy tham số cấu hình"),
     INVALID_SETTING_VALUE(HttpStatus.BAD_REQUEST, "Giá trị cấu hình không hợp lệ");

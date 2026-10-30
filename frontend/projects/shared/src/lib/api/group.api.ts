@@ -11,6 +11,7 @@ import {
   GroupSummary,
   InvitePreview,
   RsvpRequest,
+  SeatPreferenceRequest,
   SeatSuggestions,
   SeatSuggestionView,
   SuggestionOptions,
@@ -60,6 +61,10 @@ export class GroupApi {
 
   regenerateCode(id: number): Observable<GroupDetail> {
     return this.api.post<GroupDetail>(`/groups/${id}/invite-code/regenerate`);
+  }
+
+  seatPreference(id: number, request: SeatPreferenceRequest): Observable<GroupDetail> {
+    return this.api.put<GroupDetail>(`/groups/${id}/seat-preference`, request);
   }
 
   rsvp(id: number, request: RsvpRequest): Observable<GroupDetail> {

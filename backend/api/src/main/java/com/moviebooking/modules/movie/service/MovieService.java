@@ -32,6 +32,9 @@ public interface MovieService {
     /** Phim đã ngừng chiếu trả về MOVIE_NOT_FOUND. */
     MovieDetailResponse getPublicBySlug(String slug);
 
+    /** Phim tương tự theo thể loại, tối đa 6 (MOV05). */
+    List<MovieSummaryResponse> similar(String slug);
+
     List<String> listLanguages();
 
     /** Dùng cho module lịch chiếu. */

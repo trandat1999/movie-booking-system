@@ -4,21 +4,27 @@ import { DomSanitizer, SafeResourceUrl, Title } from '@angular/platform-browser'
 import { RouterLink } from '@angular/router';
 import {
   AGE_RATING_COLORS,
+  AuthStore,
   AGE_RATING_LABELS,
   MOVIE_STATUS_LABELS,
   MoviePosterComponent,
   nextDays,
+  ReviewRequest,
   youtubeEmbedUrl,
 } from '@mb/shared';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
+import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzResultModule } from 'ng-zorro-antd/result';
 import { NzSkeletonModule } from 'ng-zorro-antd/skeleton';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 
 import { DayTabsComponent } from '../../../shared/components/day-tabs.component';
+import { MovieCardComponent } from '../../../shared/components/movie-card.component';
 import { ShowtimeTimesComponent } from '../../../shared/components/showtime-times.component';
 import { groupByCinema } from '../../../shared/showtime-groups';
+import { MovieReviewsComponent } from '../components/movie-reviews.component';
 import { MoviesStore } from '../movies.store';
 
 /** Chi tiết phim, trailer và lịch chiếu theo ngày, nhóm theo rạp (MOV05, MOV06, SCH03). */
@@ -32,7 +38,10 @@ import { MoviesStore } from '../movies.store';
     NzSkeletonModule,
     NzResultModule,
     NzEmptyModule,
+    NzIconModule,
     MoviePosterComponent,
+    MovieCardComponent,
+    MovieReviewsComponent,
     DayTabsComponent,
     ShowtimeTimesComponent,
   ],
@@ -41,6 +50,8 @@ import { MoviesStore } from '../movies.store';
 })
 export class MovieDetailPage {
   protected readonly store = inject(MoviesStore);
+  protected readonly auth = inject(AuthStore);
+  private readonly message = inject(NzMessageService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly title = inject(Title);
 
@@ -75,5 +86,19 @@ export class MovieDetailPage {
 
   protected selectDate(date: string): void {
     this.selectedDate.set(date);
+  }
+
+  protected toggleFavorite(): void {
+    this.store.toggleFavorite().subscribe(() =>
+      this.message.success(this.store.favorite() ? 'Đã thêm vào phim yêu thích' : 'Đã bỏ khỏi phim yêu thích'),
+    );
+  }
+
+  protected saveReview(request: ReviewRequest): void {
+    this.store.saveReview(request).subscribe(() => this.message.success('Cảm ơn bạn đã đánh giá!'));
+  }
+
+  protected deleteReview(): void {
+    this.store.deleteReview().subscribe(() => this.message.success('Đã xóa đánh giá'));
   }
 }

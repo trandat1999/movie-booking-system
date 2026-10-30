@@ -4,6 +4,7 @@ import com.moviebooking.modules.booking.enums.OrderStatus;
 import com.moviebooking.modules.group.enums.GroupRole;
 import com.moviebooking.modules.group.enums.GroupStatus;
 import com.moviebooking.modules.group.enums.Rsvp;
+import com.moviebooking.modules.group.enums.SeatPreference;
 import com.moviebooking.modules.movie.enums.AgeRating;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -38,6 +39,7 @@ public record GroupDetailResponse(
         List<ShareView> shares,
         Progress progress,
         List<String> ageWarnings,
+        SeatingInfo seating,
         Instant serverTime) {
 
     public record MovieInfo(Long id, String title, String slug, String posterUrl, AgeRating ageRating, int durationMin) {}
@@ -45,7 +47,18 @@ public record GroupDetailResponse(
     public record CinemaInfo(Long id, String name) {}
 
     public record MemberView(
-            Long userId, String fullName, GroupRole role, Rsvp rsvp, int guestCount, Long maxBudget, Instant joinedAt) {}
+            Long userId,
+            String fullName,
+            GroupRole role,
+            Rsvp rsvp,
+            int guestCount,
+            Long maxBudget,
+            Instant joinedAt,
+            SeatPreference seatPreference,
+            Long nextToUserId) {}
+
+    /** Kết quả xếp chỗ tự động theo sở thích (GRP22) lúc phân phối vé. */
+    public record SeatingInfo(int satisfied, int requested) {}
 
     public record OptionView(
             Long id, GroupShowtimeInfo showtime, Long proposedBy, int votes, boolean votedByMe, List<String> voters) {}

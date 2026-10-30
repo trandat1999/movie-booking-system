@@ -3,6 +3,8 @@ import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from 
 import {
   BellOutline,
   DownOutline,
+  HeartFill,
+  HeartOutline,
   HistoryOutline,
   IdcardOutline,
   LockOutline,
@@ -11,6 +13,7 @@ import {
   MenuOutline,
   PhoneOutline,
   QrcodeOutline,
+  StarFill,
   TeamOutline,
   UserOutline,
 } from '@ant-design/icons-angular/icons';
@@ -25,6 +28,8 @@ export const appConfig: ApplicationConfig = {
     provideAppCore([
       BellOutline,
       DownOutline,
+      HeartFill,
+      HeartOutline,
       HistoryOutline,
       IdcardOutline,
       LockOutline,
@@ -33,6 +38,7 @@ export const appConfig: ApplicationConfig = {
       MenuOutline,
       PhoneOutline,
       QrcodeOutline,
+      StarFill,
       TeamOutline,
       UserOutline,
     ]),

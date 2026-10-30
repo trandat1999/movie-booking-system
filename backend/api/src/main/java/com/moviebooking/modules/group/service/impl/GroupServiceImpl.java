@@ -16,6 +16,7 @@ import com.moviebooking.modules.group.dto.request.CreateGroupRequest;
 import com.moviebooking.modules.group.dto.request.GroupHoldRequest;
 import com.moviebooking.modules.group.dto.request.LockGroupRequest;
 import com.moviebooking.modules.group.dto.request.RsvpRequest;
+import com.moviebooking.modules.group.dto.request.SeatPreferenceRequest;
 import com.moviebooking.modules.group.dto.request.SeatSuggestionRequest;
 import com.moviebooking.modules.group.dto.request.UpdateGroupRequest;
 import com.moviebooking.common.response.PageResponse;
@@ -58,6 +59,7 @@ import com.moviebooking.modules.setting.service.SettingService;
 import com.moviebooking.modules.showtime.entity.Showtime;
 import com.moviebooking.modules.showtime.service.ShowtimeSeatService;
 import com.moviebooking.modules.user.service.UserService;
+import com.moviebooking.seatengine.SeatAssigner;
 import com.moviebooking.seatengine.SeatLayout;
 import com.moviebooking.seatengine.Suggestion;
 import com.moviebooking.seatengine.SuggestionRequest;
@@ -329,6 +331,26 @@ public class GroupServiceImpl implements GroupService {
         member.setGuestCount(guests);
         member.setMaxBudget(request.maxBudget());
         record(group, "RSVP", userId, Map.of("rsvp", request.rsvp().name(), "guests", guests));
+        changed(group, "RSVP_UPDATED", Map.of("userId", userId));
+        return views.detail(group, userId);
+    }
+
+    @Override
+    @Transactional
+    public GroupDetailResponse updateSeatPreference(Long userId, Long groupId, SeatPreferenceRequest request) {
+        BookingGroup group = lockGroup(groupId);
+        GroupMember member = requireMember(group, userId);
+        requireStatus(group, GroupStatus.OPEN, GroupStatus.LOCKED, GroupStatus.HOLDING);
+        Long nextTo = request.nextToUserId();
+        if (nextTo != null) {
+            boolean valid = !nextTo.equals(userId)
+                    && memberRepository.findActive(groupId).stream().anyMatch(m -> m.userId().equals(nextTo));
+            if (!valid) {
+                throw new BusinessException(ErrorCode.MEMBER_NOT_FOUND);
+            }
+        }
+        member.setSeatPreference(request.preference());
+        member.setNextToUserId(nextTo);
         changed(group, "RSVP_UPDATED", Map.of("userId", userId));
         return views.detail(group, userId);
     }
@@ -885,35 +907,63 @@ public class GroupServiceImpl implements GroupService {
 
     // ===================================================================== helpers
 
-    /** Phân phối vé tự động (GRP17): trưởng nhóm → thành viên "Có" theo thứ tự tham gia → khách đi kèm. */
+    /**
+     * Phân phối vé tự động (GRP17) theo sở thích chỗ ngồi (GRP22): danh sách người gồm trưởng nhóm → thành viên
+     * "Có" theo thứ tự tham gia, khách đi kèm đứng ngay sau người mời và luôn muốn ngồi cạnh người mời; thuật toán
+     * `SeatAssigner` (seat-engine) xếp người vào ghế để đáp ứng nhiều mong muốn nhất. Vé thừa (ghế đôi) thuộc
+     * trưởng nhóm.
+     */
     private void autoAssign(BookingGroup group, Long orderId) {
         List<GroupMember> members = memberRepository.findActive(group.getId());
         List<GroupMember> attending = new ArrayList<>(members.stream().filter(m -> m.tickets() > 0).toList());
         attending.sort(Comparator.comparing((GroupMember m) -> m.getRole() != GroupRole.LEADER)
                 .thenComparing(GroupMember::getJoinedAt));
-        List<Object[]> people = new ArrayList<>();
-        attending.forEach(m -> people.add(new Object[] {m, null}));
+        Set<Long> attendingIds = attending.stream().map(GroupMember::userId).collect(Collectors.toSet());
+        Map<String, GroupMember> memberOf = new HashMap<>();
+        Map<String, String> guestLabelOf = new HashMap<>();
+        List<SeatAssigner.Person> people = new ArrayList<>();
         for (GroupMember m : attending) {
+            String key = "u" + m.userId();
+            Long nextTo = m.getNextToUserId();
+            people.add(new SeatAssigner.Person(
+                    key,
+                    SeatAssigner.Preference.valueOf(m.getSeatPreference().name()),
+                    nextTo != null && attendingIds.contains(nextTo) ? Set.of("u" + nextTo) : Set.of()));
+            memberOf.put(key, m);
             for (int i = 1; i <= m.getGuestCount(); i++) {
-                people.add(new Object[] {m, "Khách của " + m.getUser().getFullName() + (m.getGuestCount() > 1 ? " #" + i : "")});
+                String guestKey = key + "#" + i;
+                people.add(new SeatAssigner.Person(guestKey, SeatAssigner.Preference.NONE, Set.of(key)));
+                memberOf.put(guestKey, m);
+                guestLabelOf.put(guestKey,
+                        "Khách của " + m.getUser().getFullName() + (m.getGuestCount() > 1 ? " #" + i : ""));
             }
         }
         GroupMember leader = members.stream()
                 .filter(m -> m.getRole() == GroupRole.LEADER)
                 .findFirst()
                 .orElseThrow();
+        List<OrderService.OrderTicket> tickets = orderService.ticketsOfOrder(orderId);
+        Map<Long, OrderService.OrderTicket> ticketBySeat = tickets.stream()
+                .collect(Collectors.toMap(OrderService.OrderTicket::seatId, Function.identity(), (a, b) -> a));
+        SeatAssigner.Assignment seating = SeatAssigner.assign(
+                showtimeSeatService.seatLayout(group.getLockedShowtimeId()), ticketBySeat.keySet(), people);
+        group.setPreferencesSatisfied(seating.satisfied());
+        group.setPreferencesRequested(seating.requested());
+
+        Map<Long, String> personOfTicket = new HashMap<>();
+        seating.seatByPerson().forEach((person, seatId) -> personOfTicket.put(ticketBySeat.get(seatId).id(), person));
         Map<Long, GroupSeatAssignment> existing = assignmentRepository.findByGroupId(group.getId()).stream()
                 .collect(Collectors.toMap(GroupSeatAssignment::getTicketId, Function.identity()));
         Map<Long, OrderService.TicketHolder> holders = new LinkedHashMap<>();
-        List<OrderService.OrderTicket> tickets = orderService.ticketsOfOrder(orderId);
-        for (int i = 0; i < tickets.size(); i++) {
-            GroupMember member = i < people.size() ? (GroupMember) people.get(i)[0] : leader;
-            String guest = i < people.size() ? (String) people.get(i)[1] : null;
-            GroupSeatAssignment a = existing.computeIfAbsent(tickets.get(i).id(), id -> newAssignment(group.getId(), id));
+        for (OrderService.OrderTicket ticket : tickets) {
+            String person = personOfTicket.get(ticket.id());
+            GroupMember member = person == null ? leader : memberOf.get(person);
+            String guest = person == null ? null : guestLabelOf.get(person);
+            GroupSeatAssignment a = existing.computeIfAbsent(ticket.id(), id -> newAssignment(group.getId(), id));
             a.setUserId(member.userId());
             a.setGuestLabel(guest);
             assignmentRepository.save(a);
-            holders.put(tickets.get(i).id(), holder(member, guest));
+            holders.put(ticket.id(), holder(member, guest));
         }
         orderService.assignTicketHolders(orderId, holders);
     }

@@ -27,6 +27,7 @@ export * from './lib/api/notification.api';
 export * from './lib/api/group.api';
 export * from './lib/api/admin-booking.api';
 export * from './lib/api/admin-report.api';
+export * from './lib/api/review.api';
 
 // models
 export * from './lib/models/api-response.model';
@@ -36,6 +37,7 @@ export * from './lib/models/admin-report.model';
 export * from './lib/models/catalog.model';
 export * from './lib/models/labels';
 export * from './lib/models/public.model';
+export * from './lib/models/review.model';
 export * from './lib/models/user.model';
 
 // components

@@ -11,6 +11,7 @@ import {
   RealtimeService,
   RsvpRequest,
   SeatMap,
+  SeatPreferenceRequest,
 } from '@mb/shared';
 import { finalize, map, Observable, Subscription, tap } from 'rxjs';
 
@@ -86,6 +87,10 @@ export class GroupStore {
       error: () => this.notFound.set(true),
     });
     this.api.summary(this.groupId).subscribe({ next: (s) => this.summary.set(s), error: () => undefined });
+  }
+
+  seatPreference(request: SeatPreferenceRequest): Observable<GroupDetail> {
+    return this.apply(this.api.seatPreference(this.groupId, request));
   }
 
   rsvp(request: RsvpRequest): Observable<GroupDetail> {

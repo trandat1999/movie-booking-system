@@ -70,4 +70,11 @@ public class BookingGroup extends BaseEntity {
 
     @Column(name = "reminder_sent_at")
     private Instant reminderSentAt;
+
+    /** Kết quả xếp chỗ tự động theo sở thích (GRP22): số mong muốn được đáp ứng / tổng số. */
+    @Column(name = "preferences_satisfied")
+    private Integer preferencesSatisfied;
+
+    @Column(name = "preferences_requested")
+    private Integer preferencesRequested;
 }

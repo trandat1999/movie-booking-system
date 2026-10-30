@@ -38,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MovieServiceImpl implements MovieService {
 
     private static final int MAX_PAGE_SIZE = 100;
+    private static final int SIMILAR_LIMIT = 6;
 
     private final MovieRepository movieRepository;
     private final GenreRepository genreRepository;
@@ -124,6 +125,22 @@ public class MovieServiceImpl implements MovieService {
                 .filter(movie -> movie.getStatus() != MovieStatus.ENDED)
                 .map(movieMapper::toDetail)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MovieSummaryResponse> similar(String slug) {
+        Movie movie = movieRepository
+                .findWithDetailsBySlug(slug)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MOVIE_NOT_FOUND));
+        if (movie.getGenres().isEmpty()) {
+            return List.of();
+        }
+        List<Long> ids = movieRepository.findSimilarIds(
+                movie.getGenres().stream().map(Genre::getId).toList(), movie.getId(), PageRequest.of(0, SIMILAR_LIMIT));
+        Map<Long, Movie> movies = movieRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(Movie::getId, Function.identity()));
+        return ids.stream().map(movies::get).map(movieMapper::toSummary).toList();
     }
 
     @Override

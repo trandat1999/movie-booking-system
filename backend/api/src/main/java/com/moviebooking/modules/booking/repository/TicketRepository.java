@@ -30,4 +30,10 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
             + "join fetch s.room r join fetch r.cinema "
             + "where t.holderUserId = :userId and s.endAt <= :now order by s.startAt desc, t.id")
     List<Ticket> findPastForUser(@Param("userId") Long userId, @Param("now") Instant now);
+
+    /** Người dùng có vé đã soát của phim (điều kiện viết đánh giá — FBK01). */
+    @Query("select count(t) > 0 from Ticket t join t.order o join o.showtime s "
+            + "where t.holderUserId = :userId and s.movie.id = :movieId "
+            + "and t.status = com.moviebooking.modules.booking.enums.TicketStatus.USED")
+    boolean existsUsedForMovie(@Param("userId") Long userId, @Param("movieId") Long movieId);
 }

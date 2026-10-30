@@ -44,6 +44,13 @@ test('nhóm 3 người đặt vé và mỗi người nhận vé', async ({ brows
   // Trang trưởng nhóm cập nhật realtime
   await expect(leader.locator('.progress-text')).toContainText('3 vé dự kiến');
 
+  // Sở thích chỗ ngồi (GRP22): Bob muốn ngồi cạnh Alice
+  await bob.locator('nz-select#nextTo').click();
+  await bob.locator('nz-option-item', { hasText: aliceUser.fullName }).click();
+  await bob.getByRole('button', { name: 'Lưu sở thích' }).click();
+  await expect(bob.getByText('Đã lưu sở thích chỗ ngồi')).toBeVisible();
+  await expect(leader.locator('.member', { hasText: bobUser.fullName })).toContainText(`cạnh ${aliceUser.fullName}`);
+
   // Đề xuất suất và chốt
   await leader.getByRole('button', { name: 'Đề xuất suất' }).click();
   await leader.locator('app-day-tabs button', { hasText: pick.dayMonth }).click();
@@ -65,6 +72,7 @@ test('nhóm 3 người đặt vé và mỗi người nhận vé', async ({ brows
 
   await leader.goto(groupUrl);
   await expect(leader.locator('.title-row nz-tag')).toHaveText('Đã đặt vé');
+  await expect(leader.locator('nz-alert.seating')).toContainText('đáp ứng 1/1 mong muốn');
   for (const page of [leader, alice, bob]) {
     await page.goto('/account/tickets');
     await expect(page.locator('app-ticket-card')).toHaveCount(1);

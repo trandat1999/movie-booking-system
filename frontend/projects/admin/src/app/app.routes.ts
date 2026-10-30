@@ -85,6 +85,12 @@ export const routes: Routes = [
         title: 'Mã giảm giá — MovieBooking Admin',
       },
       {
+        path: 'reviews',
+        canActivate: [permissionGuard(Permissions.MOVIE_WRITE, '/dashboard')],
+        loadComponent: () => import('./features/reviews/reviews.page').then((m) => m.ReviewsPage),
+        title: 'Đánh giá phim — MovieBooking Admin',
+      },
+      {
         path: 'audit',
         canActivate: [permissionGuard(Permissions.AUDIT_READ, '/dashboard')],
         loadComponent: () => import('./features/audit/audit.page').then((m) => m.AuditPage),
