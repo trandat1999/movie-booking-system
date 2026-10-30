@@ -1,11 +1,8 @@
 package com.moviebooking.modules.showtime.service.impl;
 
 import com.moviebooking.common.util.TimeZones;
-import com.moviebooking.exception.BusinessException;
-import com.moviebooking.exception.ErrorCode;
 import com.moviebooking.modules.cinema.entity.Seat;
 import com.moviebooking.modules.cinema.entity.SeatType;
-import com.moviebooking.modules.cinema.enums.CinemaStatus;
 import com.moviebooking.modules.cinema.service.RoomService;
 import com.moviebooking.modules.cinema.service.SeatTypeService;
 import com.moviebooking.modules.setting.enums.SettingKey;
@@ -22,6 +19,7 @@ import com.moviebooking.modules.showtime.repository.ShowtimeRepository;
 import com.moviebooking.modules.showtime.repository.ShowtimeSeatRepository;
 import com.moviebooking.modules.showtime.repository.ShowtimeSpecifications;
 import com.moviebooking.modules.showtime.service.PublicShowtimeService;
+import com.moviebooking.modules.showtime.service.ShowtimeSeatService;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -44,6 +42,7 @@ public class PublicShowtimeServiceImpl implements PublicShowtimeService {
     private final RoomService roomService;
     private final SeatTypeService seatTypeService;
     private final SettingService settingService;
+    private final ShowtimeSeatService showtimeSeatService;
     private final ShowtimeMapper showtimeMapper;
     private final Clock clock;
 
@@ -119,17 +118,7 @@ public class PublicShowtimeServiceImpl implements PublicShowtimeService {
     }
 
     private Showtime findBookable(Long showtimeId) {
-        Showtime showtime = showtimeRepository
-                .findWithDetailsById(showtimeId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.SHOWTIME_NOT_FOUND));
-        boolean bookable = showtime.getStatus() == ShowtimeStatus.SCHEDULED
-                && showtime.getRoom().isActive()
-                && showtime.getRoom().getCinema().getStatus() == CinemaStatus.ACTIVE
-                && showtime.getStartAt().isAfter(saleClosedBefore(clock.instant()));
-        if (!bookable) {
-            throw new BusinessException(ErrorCode.SHOWTIME_NOT_FOUND);
-        }
-        return showtime;
+        return showtimeSeatService.getBookable(showtimeId);
     }
 
     /** Suất bắt đầu trước mốc này đã ngừng bán vé (BR16). */

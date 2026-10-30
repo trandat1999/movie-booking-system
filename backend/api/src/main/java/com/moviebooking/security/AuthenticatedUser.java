@@ -1,5 +1,6 @@
 package com.moviebooking.security;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -12,7 +13,14 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
  *
  * <p>Authority gồm {@code ROLE_<code>} cho từng vai trò và mã quyền dạng {@code resource:action}.
  */
-public record AuthenticatedUser(Long id, String email, String fullName, Set<String> roles, Set<String> permissions) {
+public record AuthenticatedUser(Long id, String email, String fullName, Set<String> roles, Set<String> permissions)
+        implements Principal {
+
+    /** Tên principal = id người dùng; dùng làm đích {@code /user/{id}/queue/...} của WebSocket. */
+    @Override
+    public String getName() {
+        return String.valueOf(id);
+    }
 
     public Collection<GrantedAuthority> authorities() {
         List<GrantedAuthority> authorities = new ArrayList<>(roles.size() + permissions.size());

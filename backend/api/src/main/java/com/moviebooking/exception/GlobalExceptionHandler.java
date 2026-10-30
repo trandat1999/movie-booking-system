@@ -6,6 +6,7 @@ import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -78,6 +79,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
         log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
+        return build(ErrorCode.CONFLICT, ErrorCode.CONFLICT.getDefaultMessage(), null);
+    }
+
+    /** Deadlock/lock timeout khi nhiều giao dịch tranh cùng dòng (ví dụ cùng ghế) — client chỉ cần thử lại. */
+    @ExceptionHandler(PessimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleLockFailure(PessimisticLockingFailureException ex) {
+        log.warn("Lock failure: {}", ex.getMostSpecificCause().getMessage());
         return build(ErrorCode.CONFLICT, ErrorCode.CONFLICT.getDefaultMessage(), null);
     }
 

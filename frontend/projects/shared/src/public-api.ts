@@ -12,6 +12,7 @@ export * from './lib/core/http/http-context';
 export * from './lib/core/interceptors/api-error.interceptor';
 export * from './lib/core/interceptors/auth.interceptor';
 export * from './lib/core/provide-app-core';
+export * from './lib/core/realtime/realtime.service';
 
 // api
 export * from './lib/api/admin-catalog.api';
@@ -21,9 +22,12 @@ export * from './lib/api/admin-user.api';
 export * from './lib/api/catalog.api';
 export * from './lib/api/auth.api';
 export * from './lib/api/me.api';
+export * from './lib/api/booking.api';
+export * from './lib/api/notification.api';
 
 // models
 export * from './lib/models/api-response.model';
+export * from './lib/models/booking.model';
 export * from './lib/models/catalog.model';
 export * from './lib/models/labels';
 export * from './lib/models/public.model';

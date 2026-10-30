@@ -1,0 +1,48 @@
+package com.moviebooking.modules.booking.service;
+
+import com.moviebooking.common.response.PageResponse;
+import com.moviebooking.modules.booking.dto.request.CreateOrderRequest;
+import com.moviebooking.modules.booking.dto.response.MyTicketResponse;
+import com.moviebooking.modules.booking.dto.response.OrderResponse;
+import com.moviebooking.modules.booking.dto.response.OrderSummaryResponse;
+import java.util.List;
+import java.util.Map;
+
+/** Đơn đặt vé và vé điện tử (BKG05–BKG10, BR04–BR09, BR17). */
+public interface OrderService {
+
+    /** Tạo đơn từ lượt giữ; gọi lại với cùng lượt giữ trả về đơn đã tạo (idempotent). */
+    OrderResponse create(Long userId, CreateOrderRequest request);
+
+    /** Đơn của chính người dùng; đơn của người khác coi như không tồn tại (chống IDOR). */
+    OrderResponse get(Long userId, String code);
+
+    /** Hủy đơn đang chờ thanh toán và trả ghế. */
+    OrderResponse cancel(Long userId, String code);
+
+    PageResponse<OrderSummaryResponse> listMine(Long userId, int page, int size);
+
+    /** @param past true = vé các suất đã chiếu xong */
+    List<MyTicketResponse> myTickets(Long userId, boolean past);
+
+    // --- Dùng cho module thanh toán ---
+
+    /**
+     * Đơn của người dùng còn thanh toán được (chờ thanh toán, chưa hết hạn).
+     *
+     * @throws com.moviebooking.exception.BusinessException ORDER_NOT_PAYABLE
+     */
+    PaymentTarget getPayable(Long userId, String code);
+
+    /** Khóa dòng đơn (SELECT ... FOR UPDATE) trước khi ghi nhận giao dịch — hai callback không chạy song song. */
+    PaymentTarget lockForPayment(String code);
+
+    /**
+     * Áp dụng thanh toán thành công cho đơn đã khóa: giữ được ghế → PAID và phát hành vé; ghế đã thuộc người
+     * khác (thanh toán về sau khi hết hạn giữ) → REFUND_PENDING (BR17).
+     */
+    void applySuccessfulPayment(String code, String provider, String transactionId);
+
+    /** Ghi lịch sử giao dịch thất bại / sai số tiền; đơn giữ nguyên trạng thái để người dùng thử lại. */
+    void recordPaymentIssue(String code, String type, Map<String, Object> data);
+}
