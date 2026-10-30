@@ -47,6 +47,12 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
             <td nzAlign="right">{{ item.price | vnd }}</td>
           </tr>
         }
+        @if (order().discount > 0) {
+          <tr>
+            <td colspan="2">Giảm giá ({{ order().promotionCode }})</td>
+            <td nzAlign="right" class="discount">−{{ order().discount | vnd }}</td>
+          </tr>
+        }
         <tr class="total-row">
           <td colspan="2">Tổng cộng ({{ order().items.length }} ghế)</td>
           <td nzAlign="right">{{ order().total | vnd }}</td>
@@ -79,6 +85,10 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 
     .muted {
       color: rgba(0, 0, 0, 0.45);
+    }
+
+    .discount {
+      color: #389e0d;
     }
 
     .total-row td {

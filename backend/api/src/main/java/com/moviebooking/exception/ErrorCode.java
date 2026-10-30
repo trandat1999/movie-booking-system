@@ -107,6 +107,14 @@ public enum ErrorCode {
     TICKET_NOT_VALID(HttpStatus.CONFLICT, "Vé không còn hiệu lực (đơn chưa thanh toán, đã hủy hoặc đã hoàn tiền)"),
     CHECKIN_NOT_OPEN(HttpStatus.CONFLICT, "Chưa tới giờ soát vé hoặc suất chiếu đã kết thúc"),
 
+    // Khuyến mãi (M8)
+    PROMOTION_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy mã giảm giá"),
+    PROMOTION_CODE_EXISTS(HttpStatus.CONFLICT, "Mã giảm giá đã tồn tại"),
+    PROMOTION_INVALID(HttpStatus.BAD_REQUEST, "Mã giảm giá không đúng hoặc đã hết hạn"),
+    PROMOTION_NOT_APPLICABLE(HttpStatus.BAD_REQUEST, "Đơn hàng chưa đủ điều kiện dùng mã giảm giá"),
+    PROMOTION_USED_UP(HttpStatus.CONFLICT, "Mã giảm giá đã hết lượt sử dụng"),
+    INVALID_PROMOTION(HttpStatus.BAD_REQUEST, "Thông tin mã giảm giá không hợp lệ"),
+
     // Cấu hình (M2)
     SETTING_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy tham số cấu hình"),
     INVALID_SETTING_VALUE(HttpStatus.BAD_REQUEST, "Giá trị cấu hình không hợp lệ");

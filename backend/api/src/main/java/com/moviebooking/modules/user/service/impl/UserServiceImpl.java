@@ -35,6 +35,21 @@ public class UserServiceImpl implements UserService {
     private final Clock clock;
 
     @Override
+    @Transactional(readOnly = true)
+    public java.util.Map<Long, com.moviebooking.modules.user.dto.response.UserBrief> briefs(java.util.Collection<Long> ids) {
+        java.util.Map<Long, com.moviebooking.modules.user.dto.response.UserBrief> result = new java.util.HashMap<>();
+        userRepository.findAllById(ids).forEach(u -> result.put(
+                u.getId(), new com.moviebooking.modules.user.dto.response.UserBrief(u.getId(), u.getFullName(), u.getEmail(), u.getPhone())));
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Long> findIdByEmail(String email) {
+        return userRepository.findWithRolesByEmail(email.trim().toLowerCase(java.util.Locale.ROOT)).map(User::getId);
+    }
+
+    @Override
     @Transactional
     public User createCustomer(CreateUserCommand command) {
         String email = normalizeEmail(command.email());

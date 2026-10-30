@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCardModule } from 'ng-zorro-antd/card';
+import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { NzRadioModule } from 'ng-zorro-antd/radio';
 import { NzResultModule } from 'ng-zorro-antd/result';
@@ -20,6 +21,7 @@ import { OrderStore } from '../order.store';
     FormsModule,
     RouterLink,
     NzCardModule,
+    NzInputModule,
     NzButtonModule,
     NzAlertModule,
     NzModalModule,
@@ -44,6 +46,22 @@ import { OrderStore } from '../order.store';
           class="hint"
         />
         <app-order-summary [order]="order" />
+
+        <h3 class="section">Mã giảm giá</h3>
+        @if (order.promotionCode) {
+          <div class="promo">
+            <span>Đã áp mã <strong>{{ order.promotionCode }}</strong></span>
+            <button nz-button nzType="link" nzSize="small" [disabled]="store.busy()" (click)="store.removePromotion()">Bỏ mã</button>
+          </div>
+        } @else {
+          <form class="promo" (ngSubmit)="applyPromotion()">
+            <input nz-input name="promo" [(ngModel)]="promotion" placeholder="Nhập mã giảm giá" aria-label="Mã giảm giá" maxlength="30" />
+            <button nz-button type="submit" [disabled]="!promotion.trim() || store.busy()">Áp dụng</button>
+          </form>
+          @if (store.promotionError(); as error) {
+            <div class="promo-error">{{ error }}</div>
+          }
+        }
 
         <h3 class="section">Phương thức thanh toán</h3>
         <!-- label[nz-radio] tự chứa ô input bên trong nên luật a11y không nhận ra -->
@@ -83,6 +101,18 @@ import { OrderStore } from '../order.store';
       margin: 24px 0 8px;
     }
 
+    .promo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 420px;
+    }
+
+    .promo-error {
+      margin-top: 4px;
+      color: #cf1322;
+    }
+
     .providers {
       display: flex;
       flex-direction: column;
@@ -104,6 +134,7 @@ export class CheckoutPage {
   readonly code = input.required<string>();
 
   protected provider = 'MOCK';
+  protected promotion = '';
 
   constructor() {
     effect(() => this.store.load(this.code()));
@@ -136,6 +167,11 @@ export class CheckoutPage {
       nzCancelText: 'Không',
       nzOnOk: () => this.store.cancel().subscribe(),
     });
+  }
+
+  protected applyPromotion(): void {
+    this.store.applyPromotion(this.promotion.trim());
+    this.promotion = '';
   }
 
   protected onExpired(): void {

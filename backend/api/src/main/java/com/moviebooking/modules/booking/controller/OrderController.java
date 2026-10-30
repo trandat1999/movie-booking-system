@@ -2,6 +2,7 @@ package com.moviebooking.modules.booking.controller;
 
 import com.moviebooking.common.response.ApiResponse;
 import com.moviebooking.common.response.PageResponse;
+import com.moviebooking.modules.booking.dto.request.ApplyPromotionRequest;
 import com.moviebooking.modules.booking.dto.request.CreateOrderRequest;
 import com.moviebooking.modules.booking.dto.response.MyTicketResponse;
 import com.moviebooking.modules.booking.dto.response.OrderResponse;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,6 +43,21 @@ public class OrderController {
     @GetMapping("/orders/{code}")
     public ApiResponse<OrderResponse> get(@CurrentUser AuthenticatedUser user, @PathVariable String code) {
         return ApiResponse.ok(orderService.get(user.id(), code));
+    }
+
+    @Operation(summary = "Áp mã giảm giá (BKG05) — giữ một lượt dùng; đơn hủy/hết hạn thì trả lượt")
+    @PostMapping("/orders/{code}/promotion")
+    public ApiResponse<OrderResponse> applyPromotion(
+            @CurrentUser AuthenticatedUser user,
+            @PathVariable String code,
+            @Valid @RequestBody ApplyPromotionRequest request) {
+        return ApiResponse.ok(orderService.applyPromotion(user.id(), code, request.code()));
+    }
+
+    @Operation(summary = "Bỏ mã giảm giá")
+    @DeleteMapping("/orders/{code}/promotion")
+    public ApiResponse<OrderResponse> removePromotion(@CurrentUser AuthenticatedUser user, @PathVariable String code) {
+        return ApiResponse.ok(orderService.removePromotion(user.id(), code));
     }
 
     @Operation(summary = "Hủy đơn đang chờ thanh toán")

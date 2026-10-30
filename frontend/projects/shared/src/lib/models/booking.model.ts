@@ -63,6 +63,7 @@ export interface Order {
   items: SeatLine[];
   subtotal: number;
   discount: number;
+  promotionCode: string | null;
   total: number;
   expiresAt: string;
   paidAt: string | null;

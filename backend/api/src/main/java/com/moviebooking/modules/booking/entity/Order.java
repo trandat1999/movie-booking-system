@@ -65,6 +65,10 @@ public class Order extends BaseEntity {
     @Column(name = "paid_at")
     private Instant paidAt;
 
+    /** Mã giảm giá đã áp (BKG05). */
+    @Column(name = "promotion_code")
+    private String promotionCode;
+
     @Column(name = "cancelled_at")
     private Instant cancelledAt;
 

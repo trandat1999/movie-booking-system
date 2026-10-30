@@ -18,6 +18,7 @@ public record OrderResponse(
         List<SeatLine> items,
         long subtotal,
         long discount,
+        String promotionCode,
         long total,
         Instant expiresAt,
         Instant paidAt,

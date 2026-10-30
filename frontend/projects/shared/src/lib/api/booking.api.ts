@@ -53,6 +53,15 @@ export class BookingApi {
     return this.api.get<PaymentProviderInfo[]>('/payments/providers');
   }
 
+  /** Lỗi (mã sai, chưa đủ điều kiện) do trang thanh toán tự hiển thị cạnh ô nhập mã. */
+  applyPromotion(code: string, promotionCode: string): Observable<Order> {
+    return this.api.post<Order>(`/orders/${encodeURIComponent(code)}/promotion`, { code: promotionCode }, { context: skipErrorMessage() });
+  }
+
+  removePromotion(code: string): Observable<Order> {
+    return this.api.delete<Order>(`/orders/${encodeURIComponent(code)}/promotion`);
+  }
+
   /** Trang return của VNPay chuyển kết quả (đã ký) về backend; backend kiểm tra chữ ký và xử lý idempotent. */
   sendVnpayReturn(params: Record<string, string>): Observable<PaymentCallbackResult> {
     return this.api.post<PaymentCallbackResult>('/payments/VNPAY/ipn', params, { context: skipErrorMessage() });

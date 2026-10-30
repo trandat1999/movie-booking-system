@@ -17,6 +17,11 @@ public interface OrderService {
     /** Đơn của chính người dùng; đơn của người khác coi như không tồn tại (chống IDOR). */
     OrderResponse get(Long userId, String code);
 
+    /** Áp mã giảm giá vào đơn chờ thanh toán (BKG05); áp mã khác thì thay mã cũ. */
+    OrderResponse applyPromotion(Long userId, String code, String promotionCode);
+
+    OrderResponse removePromotion(Long userId, String code);
+
     /** Hủy đơn đang chờ thanh toán và trả ghế. */
     OrderResponse cancel(Long userId, String code);
 
@@ -40,6 +45,16 @@ public interface OrderService {
     /** Yêu cầu hoàn tiền cho trang quản trị; {@code status} null = tất cả. */
     com.moviebooking.common.response.PageResponse<com.moviebooking.modules.booking.dto.response.AdminRefundView> listRefunds(
             com.moviebooking.modules.payment.enums.RefundStatus status, int page, int size);
+
+    // --- Quản trị (ORDADM) ---
+
+    com.moviebooking.common.response.PageResponse<com.moviebooking.modules.booking.dto.response.AdminOrderRow> adminSearch(
+            com.moviebooking.modules.booking.dto.request.AdminOrderQuery query);
+
+    com.moviebooking.modules.booking.dto.response.AdminOrderDetail adminGet(String code);
+
+    /** Admin hủy đơn: đơn đã thanh toán hoàn 100 % (ORDADM-R), đơn chờ thanh toán trả ghế. */
+    com.moviebooking.modules.booking.dto.response.AdminOrderDetail adminCancel(String code, Long actorId);
 
     // --- Dùng cho module nhóm ---
 

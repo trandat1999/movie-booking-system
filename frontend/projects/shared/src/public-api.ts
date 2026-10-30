@@ -26,11 +26,13 @@ export * from './lib/api/booking.api';
 export * from './lib/api/notification.api';
 export * from './lib/api/group.api';
 export * from './lib/api/admin-booking.api';
+export * from './lib/api/admin-report.api';
 
 // models
 export * from './lib/models/api-response.model';
 export * from './lib/models/booking.model';
 export * from './lib/models/group.model';
+export * from './lib/models/admin-report.model';
 export * from './lib/models/catalog.model';
 export * from './lib/models/labels';
 export * from './lib/models/public.model';
