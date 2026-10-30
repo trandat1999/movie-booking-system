@@ -1,0 +1,65 @@
+@if (featured().length) {
+  <div class="hero" #hero role="region" aria-label="Phim nổi bật">
+    @for (movie of featured(); track movie.id) {
+      <div class="slide">
+        <lib-movie-poster [url]="movie.posterUrl" [title]="movie.title" [width]="150" class="slide-poster" />
+        <div class="slide-info">
+          <nz-tag [nzColor]="ratingColors[movie.ageRating]">{{ movie.ageRating }}</nz-tag>
+          <h2>{{ movie.title }}</h2>
+          <p>
+            @for (g of movie.genres; track g.id) {
+              {{ g.name }}{{ $last ? '' : ', ' }}
+            }
+            · {{ movie.durationMin }} phút
+          </p>
+          <a nz-button nzType="primary" nzSize="large" [routerLink]="['/movies', movie.slug]">Mua vé</a>
+        </div>
+      </div>
+    }
+  </div>
+  <div class="dots">
+    @for (movie of featured(); track movie.id) {
+      <button
+        type="button"
+        class="dot"
+        [class.active]="$index === activeSlide()"
+        [attr.aria-label]="'Xem ' + movie.title"
+        (click)="goTo($index)"
+      ></button>
+    }
+  </div>
+}
+
+<section>
+  <div class="section-header">
+    <h2>Phim đang chiếu</h2>
+    <a routerLink="/movies" [queryParams]="{ status: 'NOW_SHOWING' }">Xem tất cả ›</a>
+  </div>
+  @if (store.loading()) {
+    <nz-skeleton [nzActive]="true" />
+  } @else {
+    <div class="grid">
+      @for (movie of store.nowShowing(); track movie.id) {
+        <app-movie-card [movie]="movie" />
+      } @empty {
+        <p class="empty">Chưa có phim đang chiếu.</p>
+      }
+    </div>
+  }
+</section>
+
+<section>
+  <div class="section-header">
+    <h2>Phim sắp chiếu</h2>
+    <a routerLink="/movies" [queryParams]="{ status: 'COMING_SOON' }">Xem tất cả ›</a>
+  </div>
+  <div class="grid">
+    @for (movie of store.comingSoon(); track movie.id) {
+      <app-movie-card [movie]="movie" [showRelease]="true" />
+    } @empty {
+      @if (!store.loading()) {
+        <p class="empty">Chưa có phim sắp chiếu.</p>
+      }
+    }
+  </div>
+</section>

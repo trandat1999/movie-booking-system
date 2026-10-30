@@ -12,10 +12,9 @@ import {
   ShowtimeQuery,
   ShowtimeRequest,
   ShowtimeUpdateRequest,
+  todayInVietnam,
 } from '@mb/shared';
 import { finalize, map, Observable, of, tap } from 'rxjs';
-
-import { todayInVietnam } from './vn-time';
 
 /** Trạng thái trang lịch chiếu (SCHADM). */
 @Injectable()

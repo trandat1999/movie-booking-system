@@ -14,4 +14,10 @@ public interface CinemaService {
     CinemaResponse create(CinemaRequest request);
 
     CinemaResponse update(Long id, CinemaRequest request);
+
+    /** Khách hàng: chỉ rạp đang hoạt động (SCH01). */
+    List<CinemaResponse> listPublic();
+
+    /** Khách hàng: rạp ngừng hoạt động trả về CINEMA_NOT_FOUND (SCH02). */
+    CinemaResponse getPublic(Long id);
 }

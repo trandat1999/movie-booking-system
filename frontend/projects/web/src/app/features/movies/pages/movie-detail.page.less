@@ -1,0 +1,102 @@
+.hero {
+  display: flex;
+  gap: 32px;
+}
+
+.poster {
+  flex: 0 0 auto;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+
+  h1 {
+    margin: 8px 0 0;
+    font-size: 30px;
+  }
+}
+
+.original {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 16px 0;
+}
+
+dt {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+dd {
+  margin: 0;
+}
+
+.description {
+  max-width: 760px;
+  line-height: 1.7;
+}
+
+section + section,
+.hero + section {
+  margin-top: 40px;
+}
+
+.trailer {
+  position: relative;
+  max-width: 800px;
+  aspect-ratio: 16 / 9;
+
+  iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 8px;
+  }
+}
+
+.showtimes {
+  display: block;
+  margin-top: 16px;
+}
+
+.cinema {
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cinema-name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.muted {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+  font-weight: normal;
+}
+
+@media (max-width: 576px) {
+  .hero {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .poster {
+    align-self: center;
+  }
+
+  .info h1 {
+    font-size: 24px;
+  }
+}

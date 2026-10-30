@@ -30,6 +30,12 @@ public class SecurityConfig {
         "/actuator/health/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
+    private static final String[] PUBLIC_GET_ENDPOINTS = {
+        "/api/v1/movies", "/api/v1/movies/*", "/api/v1/movie-languages", "/api/v1/genres",
+        "/api/v1/cinemas", "/api/v1/cinemas/*",
+        "/api/v1/showtimes", "/api/v1/showtimes/*", "/api/v1/showtimes/*/seats"
+    };
+
     private final AppProperties appProperties;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
@@ -53,6 +59,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth.requestMatchers(PUBLIC_ENDPOINTS)
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/**")
+                        .permitAll()
+                        // Tra cứu công khai: phim, rạp, lịch chiếu, sơ đồ ghế (M3)
+                        .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS)
                         .permitAll()
                         .requestMatchers("/api/v1/admin/**")
                         .hasAuthority("admin:access")

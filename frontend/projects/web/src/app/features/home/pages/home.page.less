@@ -1,0 +1,106 @@
+/* Banner trượt ngang bằng CSS scroll-snap (vuốt được trên điện thoại) */
+.hero {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  border-radius: 12px;
+  scrollbar-width: none;
+}
+
+.hero::-webkit-scrollbar {
+  display: none;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0 32px;
+}
+
+.dot {
+  width: 24px;
+  height: 4px;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: #d9d9d9;
+  cursor: pointer;
+}
+
+.dot.active {
+  background: #1677ff;
+}
+
+.slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  min-height: 280px;
+  padding: 32px 48px;
+  background: linear-gradient(120deg, #001529 0%, #1d3a5f 60%, #3b2f63 100%);
+  color: #fff;
+
+  h2 {
+    margin: 8px 0;
+    color: #fff;
+    font-size: 32px;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.75);
+  }
+}
+
+.slide-poster {
+  flex: 0 0 auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+section + section {
+  margin-top: 40px;
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 24px 16px;
+}
+
+.empty {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 576px) {
+  .slide {
+    gap: 16px;
+    min-height: 220px;
+    padding: 20px;
+
+    h2 {
+      font-size: 22px;
+    }
+  }
+
+  .slide-poster {
+    display: none;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 12px;
+  }
+}

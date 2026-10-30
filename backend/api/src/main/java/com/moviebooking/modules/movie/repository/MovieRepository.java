@@ -1,15 +1,25 @@
 package com.moviebooking.modules.movie.repository;
 
 import com.moviebooking.modules.movie.entity.Movie;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
 public interface MovieRepository extends JpaRepository<Movie, Long>, JpaSpecificationExecutor<Movie> {
 
     @EntityGraph(attributePaths = {"genres", "credits", "credits.person"})
     Optional<Movie> findWithDetailsById(Long id);
+
+    @EntityGraph(attributePaths = {"genres", "credits", "credits.person"})
+    Optional<Movie> findWithDetailsBySlug(String slug);
+
+    /** Ngôn ngữ của các phim khách hàng thấy được (đang chiếu, sắp chiếu) — dùng cho bộ lọc. */
+    @Query("select distinct m.language from Movie m "
+            + "where m.status <> com.moviebooking.modules.movie.enums.MovieStatus.ENDED order by m.language")
+    List<String> findVisibleLanguages();
 
     boolean existsBySlug(String slug);
 

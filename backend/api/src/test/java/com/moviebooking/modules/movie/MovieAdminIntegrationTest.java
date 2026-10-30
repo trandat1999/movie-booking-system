@@ -43,6 +43,26 @@ class MovieAdminIntegrationTest extends AbstractAdminIntegrationTest {
                 .andExpect(jsonPath("$.data.items[*].id", hasItem((int) id)));
     }
 
+    /** Hồi quy: nạp thể loại + người tham gia cùng lúc không được nhân bản người tham gia theo số thể loại. */
+    @Test
+    void creditsAreNotDuplicatedWhenMovieHasSeveralGenres() throws Exception {
+        Map<String, Object> body = movieBody(unique("Nhiều Thể Loại"), 100, "NOW_SHOWING", List.of(createGenre(), createGenre(), createGenre()));
+        body.put("directorIds", List.of(createPerson("Đạo Diễn X")));
+        body.put("actorIds", List.of(createPerson("Diễn Viên Y"), createPerson("Diễn Viên Z")));
+        String response = postJson("/api/v1/admin/movies", body)
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        long id = ((Number) com.jayway.jsonpath.JsonPath.read(response, "$.data.id")).longValue();
+        String slug = com.jayway.jsonpath.JsonPath.read(response, "$.data.slug");
+
+        mockMvc.perform(get("/api/v1/admin/movies/{id}", id).header("Authorization", admin.bearer()))
+                .andExpect(jsonPath("$.data.genres", org.hamcrest.Matchers.hasSize(3)))
+                .andExpect(jsonPath("$.data.directors", org.hamcrest.Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.data.actors", org.hamcrest.Matchers.hasSize(2)));
+        mockMvc.perform(get("/api/v1/movies/{slug}", slug))
+                .andExpect(jsonPath("$.data.actors[*].fullName", org.hamcrest.Matchers.contains("Diễn Viên Y", "Diễn Viên Z")));
+    }
+
     @Test
     void sameTitleGetsUniqueSlug() throws Exception {
         long genre = createGenre();

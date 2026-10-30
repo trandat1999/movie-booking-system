@@ -18,6 +18,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.Getter;
@@ -73,9 +74,13 @@ public class Movie extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "genre_id"))
     private Set<Genre> genres = new HashSet<>();
 
+    /**
+     * Set (không phải List) vì được nạp cùng {@link #genres} trong một truy vấn: List sẽ bị lặp phần tử theo số thể
+     * loại (tích Descartes của fetch join).
+     */
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("role ASC, sortOrder ASC")
-    private List<MovieCredit> credits = new ArrayList<>();
+    private Set<MovieCredit> credits = new LinkedHashSet<>();
 
     /**
      * Thay toàn bộ danh sách người tham gia theo thứ tự truyền vào. Giữ lại bản ghi cũ trùng (người, vai trò) thay
