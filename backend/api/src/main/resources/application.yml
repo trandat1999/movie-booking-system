@@ -30,6 +30,9 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  # Sau reverse proxy: Tomcat RemoteIpValve chỉ tin X-Forwarded-* từ địa chỉ nội bộ (10/8, 172.16/12, 192.168/16,
+  # 127/8...) — xem ClientInfo
+  forward-headers-strategy: native
 
 management:
   health:

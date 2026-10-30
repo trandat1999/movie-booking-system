@@ -1,15 +1,17 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AppNotification, AuthStore, VN_OFFSET } from '@mb/shared';
 import { NzBadgeModule } from 'ng-zorro-antd/badge';
 import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
+import { filter } from 'rxjs';
 
 import { NotificationStore } from './notification.store';
 
@@ -29,6 +31,7 @@ interface NavItem {
     NzButtonModule,
     NzIconModule,
     NzDropDownModule,
+    NzDrawerModule,
     NzBadgeModule,
   ],
   providers: [NotificationStore],
@@ -43,6 +46,7 @@ export class MainLayoutComponent {
 
   protected readonly year = new Date().getFullYear();
   protected readonly vn = VN_OFFSET;
+  protected readonly menuOpen = signal(false);
 
   protected readonly navItems: NavItem[] = [
     { label: 'Trang chủ', link: '/' },
@@ -52,6 +56,13 @@ export class MainLayoutComponent {
   ];
 
   constructor() {
+    // Chọn một mục trong ngăn kéo menu → điều hướng xong thì đóng ngăn kéo
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.menuOpen.set(false));
     this.notifications.arrived$
       .pipe(takeUntilDestroyed())
       .subscribe((n) => this.toast.info(n.title, n.body ?? '', { nzPlacement: 'bottomRight' }));

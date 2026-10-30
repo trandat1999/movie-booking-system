@@ -1,0 +1,4 @@
+vus,success,conflict_409,other_error,duplicate_seats,map_consistent,p50_ms,p95_ms,max_ms,wall_ms
+100,2,98,0,0,true,75.6,84.5,84.7,89.6
+300,2,298,0,0,true,245.3,250.0,251.4,263.4
+500,2,498,0,0,true,299.4,385.2,386.9,406.5

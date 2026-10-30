@@ -65,3 +65,26 @@ stateDiagram-v2
 ```
 
 Thời gian ân hạn (`app.security.refresh-token-reuse-grace`) tránh đăng xuất nhầm khi nhiều tab cùng refresh một lúc; ngoài khoảng đó, token đã xoay vòng bị dùng lại được coi là bị đánh cắp.
+
+## 5. Lượt giữ ghế — `seat_holds.status` (M4, M6)
+
+```mermaid
+stateDiagram-v2
+    [*] --> ACTIVE : giữ ghế (cá nhân / nhóm)
+    ACTIVE --> CONVERTED : thanh toán thành công (ghế → SOLD)
+    ACTIVE --> RELEASED : người dùng bỏ giữ / hủy đơn chưa thanh toán
+    ACTIVE --> EXPIRED : quá expires_at (HoldExpiryJob, mỗi 10 s)
+```
+
+Lượt giữ nhóm hết hạn kéo theo nhóm `HOLDING → LOCKED` trong cùng transaction (`HoldClosedEvent`).
+
+## 6. Vé — `tickets.status` (M4, M7)
+
+```mermaid
+stateDiagram-v2
+    [*] --> VALID : đơn PAID
+    VALID --> USED : soát vé (một lần — UPDATE ... WHERE status = 'VALID')
+    VALID --> CANCELLED : hủy vé / rạp hủy suất
+```
+
+Soát vé chỉ mở từ 120 phút trước giờ chiếu đến khi suất kết thúc; QR sai chữ ký, vé `USED` hoặc `CANCELLED` bị từ chối kèm lý do.

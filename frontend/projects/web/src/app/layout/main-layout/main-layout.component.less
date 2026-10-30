@@ -25,6 +25,16 @@
   scrollbar-width: none;
 }
 
+.menu-toggle {
+  display: none;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
 .account-trigger {
   display: flex;
   align-items: center;
@@ -127,6 +137,17 @@
 
 .footer {
   text-align: center;
+}
+
+/* Menu ngang chỉ hiện khi đủ chỗ; hẹp hơn dùng nút menu + ngăn kéo */
+@media (max-width: 767px) {
+  .nav {
+    visibility: hidden;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+  }
 }
 
 @media (max-width: 576px) {

@@ -37,7 +37,7 @@ public class AuditServiceImpl implements AuditService {
     private final AuditLogMapper auditLogMapper;
     private final ObjectMapper objectMapper;
     private final Clock clock;
-    private final TransactionTemplate requiresNewTransaction;
+    private final TransactionTemplate transaction;
 
     public AuditServiceImpl(
             AuditLogRepository auditLogRepository,
@@ -49,15 +49,15 @@ public class AuditServiceImpl implements AuditService {
         this.auditLogMapper = auditLogMapper;
         this.objectMapper = objectMapper;
         this.clock = clock;
-        this.requiresNewTransaction = new TransactionTemplate(transactionManager);
-        this.requiresNewTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.transaction = new TransactionTemplate(transactionManager);
+        this.transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
     }
 
     @Override
     public void record(AuditEntry entry) {
         try {
             AuditLog auditLog = toEntity(entry);
-            requiresNewTransaction.executeWithoutResult(status -> auditLogRepository.save(auditLog));
+            transaction.executeWithoutResult(status -> auditLogRepository.save(auditLog));
         } catch (RuntimeException ex) {
             log.error("Failed to write audit log {}", entry.action(), ex);
         }

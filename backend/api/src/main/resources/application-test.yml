@@ -23,6 +23,9 @@ app:
     vnpay:
       tmn-code: TESTTMN1
       hash-secret: test-vnpay-secret
+  # @Async chạy đồng bộ để kiểm tra thông báo/email ngay sau request
+  async:
+    synchronous: true
   # Test gọi đăng nhập/giữ ghế rất nhiều lần từ cùng IP
   rate-limit:
     login-per-minute: 100000

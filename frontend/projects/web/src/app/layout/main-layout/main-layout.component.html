@@ -1,5 +1,8 @@
 <nz-layout class="layout">
   <nz-header class="header">
+    <button type="button" class="menu-toggle" aria-label="Mở menu" (click)="menuOpen.set(true)">
+      <nz-icon nzType="menu" />
+    </button>
     <a class="logo" routerLink="/">MovieBooking</a>
     <ul nz-menu nzMode="horizontal" nzTheme="dark" class="nav">
       @for (item of navItems; track item.link) {
@@ -67,6 +70,26 @@
       </div>
     }
   </nz-header>
+
+  <!-- Điện thoại: menu chính nằm trong ngăn kéo bên trái -->
+  <nz-drawer
+    [nzVisible]="menuOpen()"
+    nzPlacement="left"
+    [nzWidth]="260"
+    nzTitle="MovieBooking"
+    [nzBodyStyle]="{ padding: 0 }"
+    (nzOnClose)="menuOpen.set(false)"
+  >
+    <ng-container *nzDrawerContent>
+      <ul nz-menu nzMode="inline">
+        @for (item of navItems; track item.link) {
+          <li nz-menu-item nzMatchRouter [nzMatchRouterExact]="item.link === '/'">
+            <a [routerLink]="item.link">{{ item.label }}</a>
+          </li>
+        }
+      </ul>
+    </ng-container>
+  </nz-drawer>
 
   <nz-content class="content">
     <router-outlet />

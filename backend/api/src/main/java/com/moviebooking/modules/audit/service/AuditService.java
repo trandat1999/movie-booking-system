@@ -7,8 +7,11 @@ import com.moviebooking.modules.audit.dto.response.AuditLogResponse;
 public interface AuditService {
 
     /**
-     * Ghi nhật ký trong transaction riêng: vẫn được lưu kể cả khi nghiệp vụ gọi nó bị rollback (ví dụ đăng nhập
-     * thất bại). Lỗi khi ghi nhật ký không làm hỏng nghiệp vụ chính.
+     * Ghi nhật ký trong transaction hiện tại (hoặc transaction mới nếu chưa có): nghiệp vụ rollback thì nhật ký cũng
+     * không còn — đúng ngữ nghĩa vì hành động không xảy ra. Nghiệp vụ cần giữ nhật ký khi từ chối (đăng nhập thất bại,
+     * phát hiện dùng lại refresh token) khai báo {@code noRollbackFor = BusinessException.class}.
+     *
+     * <p>Không dùng REQUIRES_NEW: mỗi request sẽ giữ 2 kết nối cùng lúc và làm cạn pool khi tải cao (M9).
      */
     void record(AuditEntry entry);
 
