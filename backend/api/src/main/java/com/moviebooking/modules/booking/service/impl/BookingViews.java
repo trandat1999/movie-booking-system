@@ -59,6 +59,7 @@ class BookingViews {
                         .toList(),
                 order.getSubtotal(),
                 order.getDiscount(),
+                order.getPromotionCode(),
                 order.getTotal(),
                 order.getExpiresAt(),
                 order.getPaidAt(),

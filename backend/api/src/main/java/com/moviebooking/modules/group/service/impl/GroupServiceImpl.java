@@ -18,7 +18,12 @@ import com.moviebooking.modules.group.dto.request.LockGroupRequest;
 import com.moviebooking.modules.group.dto.request.RsvpRequest;
 import com.moviebooking.modules.group.dto.request.SeatSuggestionRequest;
 import com.moviebooking.modules.group.dto.request.UpdateGroupRequest;
+import com.moviebooking.common.response.PageResponse;
+import com.moviebooking.modules.group.dto.response.AdminGroupDetail;
+import com.moviebooking.modules.group.dto.response.AdminGroupRow;
 import com.moviebooking.modules.group.dto.response.GroupDetailResponse;
+import com.moviebooking.modules.user.dto.response.UserBrief;
+import org.springframework.data.jpa.domain.Specification;
 import com.moviebooking.modules.group.dto.response.GroupListItem;
 import com.moviebooking.modules.group.dto.response.GroupSummaryResponse;
 import com.moviebooking.modules.group.dto.response.GroupSummaryResponse.OptionSummary;
@@ -666,6 +671,81 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     @Transactional(readOnly = true)
+    public PageResponse<AdminGroupRow> adminSearch(GroupStatus status, String q, int page, int size) {
+        Specification<BookingGroup> spec = (root, cq, cb) -> cb.conjunction();
+        if (status != null) {
+            spec = spec.and((root, cq, cb) -> cb.equal(root.get("status"), status));
+        }
+        if (q != null && !q.isBlank()) {
+            String like = "%" + q.trim().toLowerCase(java.util.Locale.ROOT) + "%";
+            spec = spec.and((root, cq, cb) -> cb.or(
+                    cb.like(cb.lower(root.get("name")), like), cb.like(cb.lower(root.get("code")), like)));
+        }
+        org.springframework.data.domain.Page<BookingGroup> result = groupRepository.findAll(
+                spec,
+                org.springframework.data.domain.PageRequest.of(
+                        Math.max(page, 0),
+                        Math.min(Math.max(size, 1), 100),
+                        org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")));
+        List<Long> ids = result.getContent().stream().map(BookingGroup::getId).toList();
+        Map<Long, Long> counts = new HashMap<>();
+        if (!ids.isEmpty()) {
+            memberRepository.countActiveByGroup(ids).forEach(row -> counts.put((Long) row[0], (Long) row[1]));
+        }
+        Map<Long, UserBrief> leaders = userService.briefs(
+                result.getContent().stream().map(BookingGroup::getLeaderId).collect(Collectors.toSet()));
+        return PageResponse.from(result.map(g -> new AdminGroupRow(
+                g.getId(),
+                g.getCode(),
+                g.getName(),
+                g.getStatus(),
+                g.getMovie().getTitle(),
+                leaders.get(g.getLeaderId()),
+                counts.getOrDefault(g.getId(), 0L),
+                g.getLockedTicketCount(),
+                g.getRsvpDeadline(),
+                g.getCreatedAt())));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminGroupDetail adminGet(Long groupId) {
+        BookingGroup group = groupRepository
+                .findWithDetailsById(groupId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.GROUP_NOT_FOUND));
+        List<GroupEvent> events = eventRepository.findByGroupIdOrderByCreatedAtAscIdAsc(groupId);
+        Map<Long, UserBrief> actors = userService.briefs(events.stream()
+                .map(GroupEvent::getActorId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()));
+        return new AdminGroupDetail(
+                views.detail(group, null),
+                events.stream()
+                        .map(e -> new AdminGroupDetail.EventView(
+                                e.getType(),
+                                e.getActorId(),
+                                e.getActorId() == null || !actors.containsKey(e.getActorId())
+                                        ? null
+                                        : actors.get(e.getActorId()).fullName(),
+                                e.getData(),
+                                e.getCreatedAt()))
+                        .toList(),
+                suggestionLogRepository.findByGroupIdOrderByCreatedAtDesc(groupId).stream()
+                        .map(l -> new AdminGroupDetail.SuggestionLogView(
+                                l.getId(),
+                                l.getShowtimeId(),
+                                l.getPartySize(),
+                                l.isContiguous(),
+                                l.getReason(),
+                                l.getChosenRank(),
+                                l.getDurationMs(),
+                                l.getOptions().size(),
+                                l.getCreatedAt()))
+                        .toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public boolean isActiveMember(Long groupId, Long userId) {
         return memberRepository.isActiveMember(groupId, userId);
     }
@@ -690,7 +770,25 @@ public class GroupServiceImpl implements GroupService {
     @Override
     @Transactional
     public void onOrderStatusChanged(OrderStatusChangedEvent event) {
-        if (event.groupId() == null || event.to() != OrderStatus.PAID) {
+        if (event.groupId() == null) {
+            return;
+        }
+        if (event.from() == OrderStatus.PAID && event.to() == OrderStatus.CANCELLED) {
+            // Đơn nhóm bị hủy từ ngoài trang nhóm (admin hủy, rạp hủy suất) → nhóm cũng kết thúc
+            groupRepository.findForUpdate(event.groupId())
+                    .filter(g -> g.getStatus() == GroupStatus.BOOKED)
+                    .ifPresent(g -> {
+                        g.setStatus(GroupStatus.CANCELLED);
+                        record(g, "ORDER_CANCELLED", null, Map.of("reason", String.valueOf(event.reason())));
+                        changed(g, "STATUS_CHANGED", Map.of("status", GroupStatus.CANCELLED.name()));
+                        if (!"GROUP_CANCEL".equals(event.reason())) {
+                            notifyMembers(g, null, "GROUP_CANCELLED", "Đặt vé của nhóm đã bị hủy",
+                                    "Đơn của nhóm " + g.getName() + " đã bị hủy và hoàn tiền.");
+                        }
+                    });
+            return;
+        }
+        if (event.to() != OrderStatus.PAID) {
             return;
         }
         groupRepository.findForUpdate(event.groupId()).ifPresent(group -> {

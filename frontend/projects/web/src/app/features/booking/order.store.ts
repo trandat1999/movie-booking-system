@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -7,6 +8,7 @@ import {
   PaymentCallbackResult,
   PaymentProviderInfo,
   RealtimeService,
+  resolveErrorMessage,
 } from '@mb/shared';
 import { filter, finalize, interval, map, Observable, Subscription, switchMap, takeWhile, tap } from 'rxjs';
 
@@ -58,6 +60,28 @@ export class OrderStore {
   }
 
   readonly providers = signal<PaymentProviderInfo[]>([]);
+  /** Lỗi áp mã giảm giá (hiển thị cạnh ô nhập) */
+  readonly promotionError = signal<string | null>(null);
+
+  applyPromotion(promotionCode: string): void {
+    this.busy.set(true);
+    this.promotionError.set(null);
+    this.api
+      .applyPromotion(this.order()!.code, promotionCode)
+      .pipe(finalize(() => this.busy.set(false)))
+      .subscribe({
+        next: (order) => this.order.set(order),
+        error: (e: HttpErrorResponse) => this.promotionError.set(resolveErrorMessage(e)),
+      });
+  }
+
+  removePromotion(): void {
+    this.busy.set(true);
+    this.api
+      .removePromotion(this.order()!.code)
+      .pipe(finalize(() => this.busy.set(false)))
+      .subscribe((order) => this.order.set(order));
+  }
 
   loadProviders(): void {
     this.api.providers().subscribe((list) => this.providers.set(list));

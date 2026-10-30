@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface GroupEventRepository extends JpaRepository<GroupEvent, Long> {
 
     List<GroupEvent> findTop30ByGroupIdOrderByCreatedAtDescIdDesc(Long groupId);
+
+    List<GroupEvent> findByGroupIdOrderByCreatedAtAscIdAsc(Long groupId);
 }

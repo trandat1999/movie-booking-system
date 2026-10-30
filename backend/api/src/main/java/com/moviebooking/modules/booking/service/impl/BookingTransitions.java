@@ -12,6 +12,7 @@ import com.moviebooking.modules.booking.event.OrderStatusChangedEvent;
 import com.moviebooking.modules.booking.repository.OrderEventRepository;
 import com.moviebooking.modules.booking.repository.OrderRepository;
 import com.moviebooking.modules.booking.repository.SeatHoldRepository;
+import com.moviebooking.modules.promotion.service.PromotionService;
 import com.moviebooking.modules.showtime.service.ShowtimeSeatService;
 import java.time.Clock;
 import java.time.Instant;
@@ -33,6 +34,7 @@ class BookingTransitions {
     private final SeatHoldRepository seatHoldRepository;
     private final OrderEventRepository orderEventRepository;
     private final ShowtimeSeatService showtimeSeatService;
+    private final PromotionService promotionService;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
@@ -84,6 +86,10 @@ class BookingTransitions {
             order.setCancelledAt(clock.instant());
         }
         recordEvent(order, eventType, from, to, actorId, data);
+        // Đơn không còn được thanh toán / đã hủy → trả lượt dùng mã giảm giá
+        if (to == OrderStatus.CANCELLED || to == OrderStatus.EXPIRED || to == OrderStatus.REFUND_PENDING) {
+            promotionService.release(order.getId());
+        }
         eventPublisher.publishEvent(
                 new OrderStatusChangedEvent(
                         order.getId(), order.getCode(), order.getUserId(), order.getGroupId(), from, to, eventType));

@@ -86,6 +86,13 @@ public interface GroupService {
 
     GroupDetailResponse updateAssignments(Long userId, Long groupId, AssignmentRequest request);
 
+    // --- Quản trị (GRPADM) ---
+
+    com.moviebooking.common.response.PageResponse<com.moviebooking.modules.group.dto.response.AdminGroupRow> adminSearch(
+            com.moviebooking.modules.group.enums.GroupStatus status, String q, int page, int size);
+
+    com.moviebooking.modules.group.dto.response.AdminGroupDetail adminGet(Long groupId);
+
     // --- Dùng cho STOMP, job, sự kiện của module đặt vé ---
 
     boolean isActiveMember(Long groupId, Long userId);

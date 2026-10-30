@@ -27,6 +27,16 @@ import com.moviebooking.modules.booking.enums.TicketStatus;
 import com.moviebooking.modules.payment.dto.response.RefundView;
 import com.moviebooking.modules.payment.enums.RefundStatus;
 import com.moviebooking.modules.payment.service.RefundService;
+import com.moviebooking.modules.promotion.service.PromotionService;
+import com.moviebooking.modules.payment.service.PaymentQueryService;
+import com.moviebooking.modules.user.dto.response.UserBrief;
+import com.moviebooking.modules.user.service.UserService;
+import com.moviebooking.modules.booking.repository.OrderEventRepository;
+import com.moviebooking.modules.booking.dto.request.AdminOrderQuery;
+import com.moviebooking.modules.booking.dto.response.AdminOrderDetail;
+import com.moviebooking.modules.booking.dto.response.AdminOrderRow;
+import com.moviebooking.common.util.TimeZones;
+import org.springframework.data.jpa.domain.Specification;
 import com.moviebooking.modules.setting.enums.SettingKey;
 import com.moviebooking.modules.setting.service.SettingService;
 import java.time.Clock;
@@ -57,6 +67,10 @@ public class OrderServiceImpl implements OrderService {
     private final BookingTransitions transitions;
     private final BookingViews views;
     private final RefundService refundService;
+    private final PromotionService promotionService;
+    private final PaymentQueryService paymentQueryService;
+    private final UserService userService;
+    private final OrderEventRepository orderEventRepository;
     private final SettingService settingService;
     private final Clock clock;
 
@@ -153,6 +167,137 @@ public class OrderServiceImpl implements OrderService {
                 "CANCELLED_BY_USER",
                 userId);
         return views.order(findOwned(userId, code), clock.instant());
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse applyPromotion(Long userId, String code, String promotionCode) {
+        Order order = payableOwned(userId, code);
+        PromotionService.Applied applied = promotionService.reserve(
+                userId, order.getId(), promotionCode, order.getSubtotal(), order.getItems().size());
+        order.setPromotionCode(applied.code());
+        order.setDiscount(applied.discount());
+        order.setTotal(order.getSubtotal() - applied.discount());
+        transitions.recordEvent(order, "PROMOTION_APPLIED", order.getStatus(), order.getStatus(), userId,
+                Map.of("code", applied.code(), "discount", applied.discount()));
+        return views.order(findOwned(userId, code), clock.instant());
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse removePromotion(Long userId, String code) {
+        Order order = payableOwned(userId, code);
+        if (order.getPromotionCode() != null) {
+            promotionService.release(order.getId());
+            transitions.recordEvent(order, "PROMOTION_REMOVED", order.getStatus(), order.getStatus(), userId,
+                    Map.of("code", order.getPromotionCode()));
+            order.setPromotionCode(null);
+            order.setDiscount(0);
+            order.setTotal(order.getSubtotal());
+        }
+        return views.order(findOwned(userId, code), clock.instant());
+    }
+
+    /** Đơn của người dùng, đang chờ thanh toán và chưa hết hạn — đã khóa dòng. */
+    private Order payableOwned(Long userId, String code) {
+        Order order = orderRepository
+                .findForUpdateByCode(code)
+                .filter(o -> o.getUserId().equals(userId))
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        if (order.getStatus() != OrderStatus.PENDING_PAYMENT || !order.getExpiresAt().isAfter(clock.instant())) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_PAYABLE);
+        }
+        return order;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<AdminOrderRow> adminSearch(AdminOrderQuery query) {
+        Specification<Order> spec = (root, cq, cb) -> cb.conjunction();
+        if (query.q() != null && !query.q().isBlank()) {
+            String like = "%" + query.q().trim().toUpperCase(java.util.Locale.ROOT) + "%";
+            spec = spec.and((root, cq, cb) -> cb.like(root.get("code"), like));
+        }
+        if (query.email() != null && !query.email().isBlank()) {
+            Long userId = userService.findIdByEmail(query.email()).orElse(-1L);
+            spec = spec.and((root, cq, cb) -> cb.equal(root.get("userId"), userId));
+        }
+        if (query.status() != null) {
+            spec = spec.and((root, cq, cb) -> cb.equal(root.get("status"), query.status()));
+        }
+        if (query.from() != null) {
+            Instant from = query.from().atStartOfDay(TimeZones.VIETNAM).toInstant();
+            spec = spec.and((root, cq, cb) -> cb.greaterThanOrEqualTo(root.get("createdAt"), from));
+        }
+        if (query.to() != null) {
+            Instant to = query.to().plusDays(1).atStartOfDay(TimeZones.VIETNAM).toInstant();
+            spec = spec.and((root, cq, cb) -> cb.lessThan(root.get("createdAt"), to));
+        }
+        if (query.movieId() != null) {
+            spec = spec.and((root, cq, cb) -> cb.equal(root.get("showtime").get("movie").get("id"), query.movieId()));
+        }
+        if (query.cinemaId() != null) {
+            spec = spec.and((root, cq, cb) ->
+                    cb.equal(root.get("showtime").get("room").get("cinema").get("id"), query.cinemaId()));
+        }
+        PageRequest pageable = PageRequest.of(
+                Math.max(query.page(), 0),
+                Math.min(Math.max(query.size(), 1), MAX_PAGE_SIZE),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+        org.springframework.data.domain.Page<Order> page = orderRepository.findAll(spec, pageable);
+        Map<Long, UserBrief> customers =
+                userService.briefs(page.getContent().stream().map(Order::getUserId).collect(Collectors.toSet()));
+        return PageResponse.from(page.map(o -> new AdminOrderRow(
+                o.getCode(),
+                o.getStatus(),
+                views.showtime(o.getShowtime()),
+                o.getItems().size(),
+                o.getTotal(),
+                o.getDiscount(),
+                o.getPromotionCode(),
+                o.getGroupId(),
+                customers.get(o.getUserId()),
+                o.getCreatedAt(),
+                o.getPaidAt())));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminOrderDetail adminGet(String code) {
+        Order order = orderRepository
+                .findWithDetailsByCode(code)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        return adminDetail(order);
+    }
+
+    @Override
+    @Transactional
+    public AdminOrderDetail adminCancel(String code, Long actorId) {
+        Order order = orderRepository
+                .findForUpdateByCode(code)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        if (order.getStatus() == OrderStatus.PAID) {
+            cancelPaidOrder(order, actorId, "ADMIN_CANCEL", false);
+        } else if (order.getStatus() == OrderStatus.PENDING_PAYMENT) {
+            transitions.changeStatus(order, OrderStatus.CANCELLED, "ADMIN_CANCEL", actorId, null);
+            transitions.closeHold(
+                    order.getHoldId(), null, null, HoldStatus.RELEASED, OrderStatus.CANCELLED, "ADMIN_CANCEL", actorId);
+        } else {
+            throw new BusinessException(ErrorCode.ORDER_NOT_CANCELLABLE);
+        }
+        return adminDetail(orderRepository.findWithDetailsByCode(code).orElseThrow());
+    }
+
+    private AdminOrderDetail adminDetail(Order order) {
+        UserBrief customer = userService.briefs(List.of(order.getUserId())).get(order.getUserId());
+        List<AdminOrderDetail.EventView> events = orderEventRepository
+                .findByOrderIdOrderByCreatedAtAscIdAsc(order.getId())
+                .stream()
+                .map(e -> new AdminOrderDetail.EventView(
+                        e.getType(), e.getFromStatus(), e.getToStatus(), e.getActorId(), e.getData(), e.getCreatedAt()))
+                .toList();
+        return new AdminOrderDetail(
+                views.order(order, clock.instant()), customer, events, paymentQueryService.listByOrder(order.getId()));
     }
 
     @Override

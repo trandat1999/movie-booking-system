@@ -29,4 +29,9 @@ public interface UserService {
 
     /** Đổi mật khẩu và thu hồi mọi phiên đăng nhập. */
     void changePassword(Long userId, ChangePasswordRequest request);
+
+    /** Thông tin ngắn của nhiều người dùng (màn quản trị đơn/nhóm). */
+    java.util.Map<Long, com.moviebooking.modules.user.dto.response.UserBrief> briefs(java.util.Collection<Long> ids);
+
+    Optional<Long> findIdByEmail(String email);
 }

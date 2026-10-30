@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -19,7 +20,7 @@ import org.springframework.data.repository.query.Param;
 /**
  * Thứ tự khóa trong module đặt vé để tránh deadlock: đơn hàng → lượt giữ → dòng ghế ({@code showtime_seats}).
  */
-public interface OrderRepository extends JpaRepository<Order, Long> {
+public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecificationExecutor<Order> {
 
     @EntityGraph(attributePaths = {"showtime", "showtime.movie", "showtime.room", "showtime.room.cinema", "items", "tickets"})
     Optional<Order> findWithDetailsByCode(String code);

@@ -66,7 +66,30 @@ export const routes: Routes = [
         loadComponent: () => import('./features/refunds/refunds.page').then((m) => m.RefundsPage),
         title: 'Hoàn tiền — MovieBooking Admin',
       },
-      // M8: orders, groups, promotions, audit
+      {
+        path: 'orders',
+        canActivate: [permissionGuard(Permissions.ORDER_READ, '/dashboard')],
+        loadComponent: () => import('./features/orders/orders.page').then((m) => m.OrdersPage),
+        title: 'Đơn đặt vé — MovieBooking Admin',
+      },
+      {
+        path: 'groups',
+        canActivate: [permissionGuard(Permissions.GROUP_READ, '/dashboard')],
+        loadComponent: () => import('./features/groups/groups.page').then((m) => m.GroupsPage),
+        title: 'Nhóm đặt vé — MovieBooking Admin',
+      },
+      {
+        path: 'promotions',
+        canActivate: [permissionGuard(Permissions.PROMOTION_WRITE, '/dashboard')],
+        loadComponent: () => import('./features/promotions/promotions.page').then((m) => m.PromotionsPage),
+        title: 'Mã giảm giá — MovieBooking Admin',
+      },
+      {
+        path: 'audit',
+        canActivate: [permissionGuard(Permissions.AUDIT_READ, '/dashboard')],
+        loadComponent: () => import('./features/audit/audit.page').then((m) => m.AuditPage),
+        title: 'Nhật ký thao tác — MovieBooking Admin',
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

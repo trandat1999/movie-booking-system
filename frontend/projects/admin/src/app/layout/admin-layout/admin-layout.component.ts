@@ -26,6 +26,7 @@ const MENU: MenuItem[] = [
   { label: 'Soát vé', icon: 'scan', link: '/checkin', permission: Permissions.TICKET_CHECKIN },
   { label: 'Hoàn tiền', icon: 'rollback', link: '/refunds', permission: Permissions.ORDER_REFUND },
   { label: 'Người dùng', icon: 'user', link: '/users', permission: Permissions.USER_READ },
+  { label: 'Nhật ký thao tác', icon: 'file-search', link: '/audit', permission: Permissions.AUDIT_READ },
   { label: 'Cấu hình hệ thống', icon: 'setting', link: '/settings', permission: Permissions.SETTING_WRITE },
 ];
 
