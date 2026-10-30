@@ -449,6 +449,12 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
+    public boolean hasWatched(Long userId, Long movieId) {
+        return ticketRepository.existsUsedForMovie(userId, movieId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<OrderTicket> ticketsOfOrder(Long orderId) {
         return ticketRepository.findByOrderIdOrderByIdAsc(orderId).stream()
                 .map(t -> new OrderTicket(

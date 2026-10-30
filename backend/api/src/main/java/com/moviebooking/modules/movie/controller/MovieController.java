@@ -48,6 +48,12 @@ public class MovieController {
         return ApiResponse.ok(movieService.getPublicBySlug(slug));
     }
 
+    @Operation(summary = "Phim tương tự theo thể loại (MOV05)")
+    @GetMapping("/movies/{slug}/similar")
+    public ApiResponse<List<MovieSummaryResponse>> similar(@PathVariable String slug) {
+        return ApiResponse.ok(movieService.similar(slug));
+    }
+
     @Operation(summary = "Các ngôn ngữ phim — dùng cho bộ lọc")
     @GetMapping("/movie-languages")
     public ApiResponse<List<String>> languages() {

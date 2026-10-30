@@ -118,6 +118,14 @@
       <!-- Đã đặt: phân phối vé & chia tiền -->
       @if (g.status === 'BOOKED' || g.status === 'COMPLETED') {
         <nz-card class="block" nzTitle="Vé của nhóm" [nzExtra]="assignmentActions">
+          @if (g.seating && g.seating.requested > 0) {
+            <nz-alert
+              class="seating"
+              nzType="info"
+              nzShowIcon
+              [nzMessage]="'Hệ thống đã xếp chỗ đáp ứng ' + g.seating.satisfied + '/' + g.seating.requested + ' mong muốn chỗ ngồi của nhóm.'"
+            />
+          }
           <nz-table [nzData]="g.assignments" [nzShowPagination]="false" nzSize="small" [nzFrontPagination]="false">
             <thead>
               <tr>
@@ -181,6 +189,22 @@
             }
           }
         </ng-template>
+      }
+
+      <!-- Sở thích chỗ ngồi (GRP22): đổi được tới khi thanh toán -->
+      @if (g.status === 'OPEN' || g.status === 'LOCKED' || g.status === 'HOLDING') {
+        @if (store.me(); as me) {
+          @if (me.rsvp !== 'NO') {
+            <nz-card class="block" nzTitle="Chỗ ngồi mong muốn">
+              <app-seat-preference-form
+                [member]="me"
+                [members]="g.members"
+                [saving]="store.busy()"
+                (saved)="saveSeatPreference($event)"
+              />
+            </nz-card>
+          }
+        }
       }
 
       <!-- Đang lên kế hoạch: phản hồi & bình chọn -->
@@ -256,6 +280,12 @@
                 }
                 @if (m.maxBudget) {
                   <span class="muted">· ≤ {{ m.maxBudget | vnd }}</span>
+                }
+                @if (m.seatPreference !== 'NONE') {
+                  <span class="muted">· {{ seatPreferenceLabels[m.seatPreference] }}</span>
+                }
+                @if (nextToName(m); as name) {
+                  <span class="muted">· cạnh {{ name }}</span>
                 }
               </div>
             </div>

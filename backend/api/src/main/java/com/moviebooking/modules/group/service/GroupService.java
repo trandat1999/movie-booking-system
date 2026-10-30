@@ -8,6 +8,7 @@ import com.moviebooking.modules.group.dto.request.CreateGroupRequest;
 import com.moviebooking.modules.group.dto.request.GroupHoldRequest;
 import com.moviebooking.modules.group.dto.request.LockGroupRequest;
 import com.moviebooking.modules.group.dto.request.RsvpRequest;
+import com.moviebooking.modules.group.dto.request.SeatPreferenceRequest;
 import com.moviebooking.modules.group.dto.request.SeatSuggestionRequest;
 import com.moviebooking.modules.group.dto.request.UpdateGroupRequest;
 import com.moviebooking.modules.group.dto.response.GroupDetailResponse;
@@ -48,6 +49,9 @@ public interface GroupService {
     // --- Phản hồi, bình chọn, tổng hợp, chốt (GRP05–GRP09) ---
 
     GroupDetailResponse rsvp(Long userId, Long groupId, RsvpRequest request);
+
+    /** Sở thích chỗ ngồi (GRP22) — đổi được tới khi nhóm thanh toán. */
+    GroupDetailResponse updateSeatPreference(Long userId, Long groupId, SeatPreferenceRequest request);
 
     GroupDetailResponse proposeOption(Long userId, Long groupId, Long showtimeId);
 

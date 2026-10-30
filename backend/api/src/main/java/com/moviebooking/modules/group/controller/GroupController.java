@@ -11,6 +11,7 @@ import com.moviebooking.modules.group.dto.request.JoinGroupRequest;
 import com.moviebooking.modules.group.dto.request.LockGroupRequest;
 import com.moviebooking.modules.group.dto.request.ProposeOptionRequest;
 import com.moviebooking.modules.group.dto.request.RsvpRequest;
+import com.moviebooking.modules.group.dto.request.SeatPreferenceRequest;
 import com.moviebooking.modules.group.dto.request.SeatSelectionRequest;
 import com.moviebooking.modules.group.dto.request.SeatSuggestionRequest;
 import com.moviebooking.modules.group.dto.request.TransferLeaderRequest;
@@ -129,6 +130,15 @@ public class GroupController {
     public ApiResponse<GroupDetailResponse> rsvp(
             @CurrentUser AuthenticatedUser user, @PathVariable Long id, @Valid @RequestBody RsvpRequest request) {
         return ApiResponse.ok(groupService.rsvp(user.id(), id, request));
+    }
+
+    @Operation(summary = "Sở thích chỗ ngồi: vị trí ưa thích, muốn ngồi cạnh ai (GRP22)")
+    @PutMapping("/groups/{id}/seat-preference")
+    public ApiResponse<GroupDetailResponse> seatPreference(
+            @CurrentUser AuthenticatedUser user,
+            @PathVariable Long id,
+            @Valid @RequestBody SeatPreferenceRequest request) {
+        return ApiResponse.ok(groupService.updateSeatPreference(user.id(), id, request));
     }
 
     @Operation(summary = "Đề xuất suất chiếu để bình chọn (GRP06)")

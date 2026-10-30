@@ -2,6 +2,7 @@ package com.moviebooking.modules.group.entity;
 
 import com.moviebooking.modules.group.enums.GroupRole;
 import com.moviebooking.modules.group.enums.Rsvp;
+import com.moviebooking.modules.group.enums.SeatPreference;
 import com.moviebooking.modules.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -55,6 +56,14 @@ public class GroupMember {
 
     @Column(name = "left_at")
     private Instant leftAt;
+
+    /** Sở thích chỗ ngồi (GRP22). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "seat_preference", nullable = false)
+    private SeatPreference seatPreference = SeatPreference.NONE;
+
+    @Column(name = "next_to_user_id")
+    private Long nextToUserId;
 
     public Long userId() {
         return user.getId();

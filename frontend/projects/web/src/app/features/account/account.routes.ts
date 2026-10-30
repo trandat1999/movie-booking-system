@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { AccountStore } from './account.store';
+import { FavoritesStore } from './favorites.store';
 import { MyBookingStore } from './my-booking.store';
 
 export const ACCOUNT_ROUTES: Routes = [
@@ -21,5 +22,11 @@ export const ACCOUNT_ROUTES: Routes = [
     providers: [MyBookingStore],
     loadComponent: () => import('./pages/my-orders.page').then((m) => m.MyOrdersPage),
     title: 'Lịch sử đơn hàng — MovieBooking',
+  },
+  {
+    path: 'favorites',
+    providers: [FavoritesStore],
+    loadComponent: () => import('./pages/my-favorites.page').then((m) => m.MyFavoritesPage),
+    title: 'Phim yêu thích — MovieBooking',
   },
 ];

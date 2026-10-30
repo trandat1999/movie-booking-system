@@ -9,7 +9,7 @@ import {
   ShowtimePhase,
 } from './catalog.model';
 import { OrderStatus, TicketStatus } from './booking.model';
-import { GroupStatus, Rsvp } from './group.model';
+import { GroupStatus, Rsvp, SeatPreference } from './group.model';
 
 /** Nhãn tiếng Việt cho các enum hiển thị trên giao diện. */
 
@@ -134,6 +134,12 @@ export const RSVP_LABELS: Record<Rsvp, string> = {
   YES: 'Tham gia',
   NO: 'Không tham gia',
   MAYBE: 'Chưa chắc',
+};
+
+export const SEAT_PREFERENCE_LABELS: Record<SeatPreference, string> = {
+  NONE: 'Không yêu cầu',
+  AISLE: 'Đầu dãy / cạnh lối đi',
+  CENTER: 'Giữa hàng',
 };
 
 export const RSVP_COLORS: Record<Rsvp, string> = {

@@ -14,6 +14,7 @@ import com.moviebooking.modules.group.dto.response.GroupDetailResponse.MovieInfo
 import com.moviebooking.modules.group.dto.response.GroupDetailResponse.OptionView;
 import com.moviebooking.modules.group.dto.response.GroupDetailResponse.OrderInfo;
 import com.moviebooking.modules.group.dto.response.GroupDetailResponse.Progress;
+import com.moviebooking.modules.group.dto.response.GroupDetailResponse.SeatingInfo;
 import com.moviebooking.modules.group.dto.response.GroupDetailResponse.ShareView;
 import com.moviebooking.modules.group.dto.response.GroupShowtimeInfo;
 import com.moviebooking.modules.group.entity.BookingGroup;
@@ -124,6 +125,9 @@ class GroupViews {
                 order == null ? List.of() : shares(members, g.getLeaderId(), order.total()),
                 progress(members),
                 ageWarnings(g.getMovie(), members, locked),
+                g.getPreferencesRequested() == null
+                        ? null
+                        : new SeatingInfo(g.getPreferencesSatisfied(), g.getPreferencesRequested()),
                 clock.instant());
     }
 
@@ -221,6 +225,6 @@ class GroupViews {
     private static MemberView memberView(GroupMember m) {
         return new MemberView(
                 m.userId(), m.getUser().getFullName(), m.getRole(), m.getRsvp(), m.getGuestCount(), m.getMaxBudget(),
-                m.getJoinedAt());
+                m.getJoinedAt(), m.getSeatPreference(), m.getNextToUserId());
     }
 }

@@ -33,7 +33,8 @@ public class SecurityConfig {
     };
 
     private static final String[] PUBLIC_GET_ENDPOINTS = {
-        "/api/v1/movies", "/api/v1/movies/*", "/api/v1/movie-languages", "/api/v1/genres",
+        "/api/v1/movies", "/api/v1/movies/*", "/api/v1/movies/*/similar", "/api/v1/movies/*/reviews",
+        "/api/v1/movie-languages", "/api/v1/genres",
         "/api/v1/cinemas", "/api/v1/cinemas/*",
         "/api/v1/showtimes", "/api/v1/showtimes/*", "/api/v1/showtimes/*/seats"
     };

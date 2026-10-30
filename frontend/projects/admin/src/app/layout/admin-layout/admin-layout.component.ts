@@ -17,6 +17,7 @@ interface MenuItem {
 const MENU: MenuItem[] = [
   { label: 'Dashboard', icon: 'dashboard', link: '/dashboard', permission: Permissions.ADMIN_ACCESS },
   { label: 'Phim', icon: 'video-camera', link: '/movies', permission: Permissions.MOVIE_WRITE },
+  { label: 'Đánh giá phim', icon: 'star', link: '/reviews', permission: Permissions.MOVIE_WRITE },
   { label: 'Rạp & phòng chiếu', icon: 'bank', link: '/cinemas', permission: Permissions.CINEMA_WRITE },
   { label: 'Lịch chiếu', icon: 'calendar', link: '/showtimes', permission: Permissions.SHOWTIME_WRITE },
   { label: 'Giá vé & ngày lễ', icon: 'dollar', link: '/pricing', permission: Permissions.SHOWTIME_WRITE },

@@ -100,3 +100,25 @@ section + section,
     font-size: 24px;
   }
 }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.heart {
+  color: #eb2f96;
+}
+
+.similar {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 576px) {
+  .similar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -72,6 +72,11 @@ public interface OrderService {
 
     record TicketHolder(Long userId, String name) {}
 
+    // --- Dùng cho module đánh giá ---
+
+    /** Người dùng đã xem phim: có vé (đứng tên mình) đã được soát (FBK01). */
+    boolean hasWatched(Long userId, Long movieId);
+
     // --- Dùng cho module thanh toán ---
 
     /**
