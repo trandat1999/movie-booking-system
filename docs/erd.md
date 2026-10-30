@@ -1,6 +1,6 @@
 # Sơ đồ thực thể – quan hệ (ERD)
 
-Nguồn sự thật của schema là các migration Flyway trong `backend/api/src/main/resources/db/migration`. Sơ đồ này cập nhật theo từng giai đoạn; bảng đánh dấu ✅ đã có migration, các bảng còn lại là thiết kế theo PLAN.md mục 7.
+Nguồn sự thật của schema là các migration Flyway trong `backend/api/src/main/resources/db/migration`. Sơ đồ cập nhật theo từng giai đoạn; mọi bảng dưới đây đã có migration (V1–V9).
 
 | Nhóm | Bảng | Trạng thái |
 |---|---|---|
@@ -9,9 +9,9 @@ Nguồn sự thật của schema là các migration Flyway trong `backend/api/sr
 | Danh mục | `genres`, `people`, `movies`, `movie_genres`, `movie_people` | ✅ M2 (`V3__catalog.sql`) |
 | Rạp | `cinemas`, `rooms`, `seat_types`, `seats` | ✅ M2 (`V4__cinema.sql`) |
 | Lịch chiếu & giá | `ticket_base_prices`, `holidays`, `showtimes`, `showtime_prices`, `showtime_seats` | ✅ M2 (`V5__showtime.sql`) |
-| Bán vé | `seat_holds`, `orders`, `order_items`, `tickets`, `payments`, `refunds`, `order_events` | M4, M7 |
-| Nhóm | `booking_groups`, `group_members`, `group_showtime_options`, `group_votes`, `group_seat_assignments`, `group_events`, `seat_suggestion_logs` | M6 |
-| Khác | `promotions`, `promotion_usages`, `notifications` | M4, M8 |
+| Bán vé | `seat_holds`, `orders`, `order_items`, `tickets`, `payments`, `order_events`, `notifications` | ✅ M4 (`V6__booking.sql`) · `refunds` ✅ M7 (`V8__refunds.sql`) |
+| Nhóm | `booking_groups`, `group_members`, `group_showtime_options`, `group_votes`, `group_seat_assignments`, `group_events`, `seat_suggestion_logs` | ✅ M6 (`V7__groups.sql`) |
+| Khuyến mãi | `promotions`, `promotion_usages` | ✅ M8 (`V9__promotions.sql`) |
 
 ## 1. Tài khoản, phân quyền, nhật ký (M1)
 
@@ -169,7 +169,7 @@ erDiagram
 
 Ràng buộc chống trùng lịch: `EXCLUDE USING gist (room_id WITH =, tstzrange(start_at, blocked_until) WITH &&) WHERE status <> 'CANCELLED'`.
 
-## 3. Toàn cảnh nghiệp vụ (thiết kế)
+## 3. Toàn cảnh nghiệp vụ
 
 ```mermaid
 erDiagram
@@ -202,3 +202,190 @@ erDiagram
 ```
 
 Ràng buộc chống bán trùng ghế (BR01): khóa chính `showtime_seats(showtime_id, seat_id)` + partial unique index `tickets(showtime_id, seat_id) WHERE status <> 'CANCELLED'`.
+
+## 4. Bán vé & thanh toán (M4, M7, M8)
+
+```mermaid
+erDiagram
+    seat_holds {
+        bigint id PK
+        bigint user_id FK
+        bigint showtime_id FK
+        bigint group_id FK "null = giữ cá nhân"
+        varchar status "ACTIVE | CONVERTED | RELEASED | EXPIRED"
+        timestamptz expires_at
+    }
+    orders {
+        bigint id PK
+        varchar code UK "MB…"
+        bigint user_id FK
+        bigint showtime_id FK
+        bigint hold_id FK
+        bigint group_id FK
+        varchar status
+        bigint subtotal
+        bigint discount
+        bigint total
+        varchar promotion_code
+        timestamptz expires_at
+        timestamptz paid_at
+    }
+    order_items {
+        bigint id PK
+        bigint order_id FK
+        bigint seat_id FK
+        varchar seat_label
+        varchar seat_type_code
+        bigint price
+    }
+    tickets {
+        bigint id PK
+        bigint order_id FK
+        bigint showtime_id FK
+        bigint seat_id FK
+        varchar code UK
+        bigint holder_user_id FK
+        varchar holder_name
+        varchar status "VALID | USED | CANCELLED"
+        timestamptz checked_in_at
+        bigint checked_in_by FK
+    }
+    payments {
+        bigint id PK
+        bigint order_id FK
+        varchar provider
+        varchar provider_txn_id "UK(provider, provider_txn_id)"
+        bigint amount
+        varchar status
+        jsonb raw
+    }
+    refunds {
+        bigint id PK
+        bigint order_id FK
+        bigint payment_id FK
+        bigint amount
+        varchar reason
+        varchar status "PENDING | COMPLETED | FAILED"
+        bigint processed_by FK
+    }
+    order_events {
+        bigint id PK
+        bigint order_id FK
+        varchar type
+        varchar from_status
+        varchar to_status
+        bigint actor_id
+        jsonb data
+    }
+    promotions {
+        bigint id PK
+        varchar code UK
+        varchar type "PERCENT | AMOUNT"
+        bigint value
+        bigint max_discount
+        bigint min_order
+        int min_tickets "> 1 = ưu đãi nhóm"
+        int usage_limit
+        int per_user_limit
+        int used_count
+    }
+    promotion_usages {
+        bigint id PK
+        bigint promotion_id FK
+        bigint order_id FK
+        bigint user_id FK
+        bigint discount
+    }
+    notifications {
+        bigint id PK
+        bigint user_id FK
+        varchar type
+        varchar title
+        varchar link
+        timestamptz read_at
+    }
+    seat_holds ||--o| orders : "tạo đơn"
+    orders ||--|{ order_items : ""
+    orders ||--o{ tickets : ""
+    orders ||--o{ payments : ""
+    orders ||--o{ refunds : ""
+    payments ||--o{ refunds : ""
+    orders ||--o{ order_events : ""
+    promotions ||--o{ promotion_usages : ""
+    orders ||--o| promotion_usages : ""
+```
+
+## 5. Nhóm đặt vé (M6)
+
+```mermaid
+erDiagram
+    booking_groups {
+        bigint id PK
+        varchar code UK "mã mời"
+        varchar name
+        bigint leader_id FK
+        bigint movie_id FK
+        bigint cinema_id FK "null = rạp nào cũng được"
+        date date_from
+        date date_to
+        timestamptz rsvp_deadline
+        varchar status
+        bigint locked_showtime_id FK
+        int locked_ticket_count
+        bigint hold_id FK
+        bigint order_id FK
+    }
+    group_members {
+        bigint id PK
+        bigint group_id FK
+        bigint user_id FK
+        varchar role "LEADER | MEMBER"
+        varchar rsvp "YES | NO | MAYBE | PENDING"
+        int guest_count
+        bigint max_budget
+        timestamptz left_at
+    }
+    group_showtime_options {
+        bigint id PK
+        bigint group_id FK
+        bigint showtime_id FK
+        bigint proposed_by FK
+    }
+    group_votes {
+        bigint option_id PK
+        bigint user_id PK
+    }
+    group_seat_assignments {
+        bigint id PK
+        bigint group_id FK
+        bigint ticket_id FK
+        bigint user_id FK
+        varchar guest_label
+    }
+    group_events {
+        bigint id PK
+        bigint group_id FK
+        varchar type
+        bigint actor_id
+        jsonb data
+    }
+    seat_suggestion_logs {
+        bigint id PK
+        bigint group_id FK
+        bigint showtime_id FK
+        int party_size
+        jsonb options
+        varchar reason "NOT_ENOUGH_SEATS | NO_CLUSTER"
+        int chosen_rank
+        boolean contiguous
+        int duration_ms
+    }
+    booking_groups ||--|{ group_members : ""
+    booking_groups ||--o{ group_showtime_options : ""
+    group_showtime_options ||--o{ group_votes : ""
+    booking_groups ||--o{ group_seat_assignments : ""
+    booking_groups ||--o{ group_events : ""
+    booking_groups ||--o{ seat_suggestion_logs : ""
+```
+
+`seat_suggestion_logs` là nguồn số liệu cho thống kê nhóm (ADM02): tỷ lệ tìm được cụm liền kề, phương án được chọn.

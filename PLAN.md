@@ -730,7 +730,7 @@ Mỗi giai đoạn kết thúc bằng: code chạy được, test xanh, cập nh
 - [x] Module `seat-bench`: bộ sinh phòng/tỷ lệ lấp đầy, 2 baseline, JMH; xuất CSV vào `docs/experiments/`
 - **Xong khi**: phòng 300 ghế, n ≤ 10, p95 < 50 ms; tất cả test xanh.
 
-### M6 — Đặt vé theo nhóm (Mô hình A)
+### M6 — Đặt vé theo nhóm (Mô hình A) ✅
 - [x] Schema nhóm; tạo nhóm, mã mời/link, tham gia, rời, loại, chuyển trưởng nhóm (GRP01–04)
 - [x] Phản hồi + khách đi kèm + ngân sách; đề xuất & bình chọn suất; tổng hợp + cảnh báo cụm ghế còn lại + cảnh báo độ tuổi (GRP05–08)
 - [x] Chốt / mở chốt; job hết hạn nhóm + nhắc nhở (GRP09, GRP18)
@@ -738,7 +738,7 @@ Mỗi giai đoạn kết thúc bằng: code chạy được, test xanh, cập nh
 - [x] Giữ ghế nhóm nguyên tử; thất bại → đề xuất lại (GRP14); thành viên xem realtime (GRP15)
 - [x] Thanh toán của trưởng nhóm, chia tiền tham khảo, phân phối vé (GRP16–17)
 - [x] Trang tiến trình nhóm, Nhóm của tôi (GRP19–20); ghi `group_events`, `seat_suggestion_logs`
-- [ ] E2E Playwright: 3 tài khoản → tạo nhóm → bình chọn → chốt → giữ ghế → thanh toán → mỗi người thấy vé — **chuyển sang M9** cùng bộ E2E còn lại (M6 đã có test tích hợp cùng kịch bản + chạy thử trên trình duyệt)
+- [x] E2E Playwright: 3 tài khoản → tạo nhóm → bình chọn → chốt → giữ ghế → thanh toán → mỗi người thấy vé — **làm ở M9** (`frontend/e2e/group-booking.spec.ts`) cùng bộ E2E còn lại (M6 đã có test tích hợp cùng kịch bản + chạy thử trên trình duyệt)
 
 **Quyết định cài đặt M6** (bổ sung cho mục 6.3, 7, 8, 10):
 - Trọng số thuật toán lưu thành 6 tham số số nguyên `seat_weight_center|rows|align|orphan|price|waste` (thay cho một JSON `seat_weights`, để dùng lại cơ chế kiểm tra giá trị của SYS01).
@@ -770,13 +770,21 @@ Mỗi giai đoạn kết thúc bằng: code chạy được, test xanh, cập nh
 - Mã giảm giá: áp mã giữ một lượt dùng ngay (khóa dòng mã), đơn hủy/hết hạn/không nhận được ghế thì trả lượt; `min_tickets` > 1 là ưu đãi đặt vé nhóm. Giảm giá đã chụp vào đơn trước khi thanh toán.
 - `created_at/updated_at` (JPA auditing) lấy giờ từ `Clock` của ứng dụng để thống kê theo ngày nhất quán.
 
-### M9 — Kiểm thử, hoàn thiện, tài liệu
-- [ ] k6: 100–500 VU giữ cùng một ghế / cùng một cụm → đúng 1 thành công; ghi kết quả
-- [ ] k6: tải hỗn hợp (xem sơ đồ + giữ ghế + thanh toán), đo p95
-- [ ] Rà soát bảo mật (quyền, rate limit, IDOR trên đơn/nhóm/vé)
-- [ ] Responsive mobile, trạng thái loading/lỗi, rỗng
-- [ ] Tài liệu: use case, ERD, state machine, sequence (giữ ghế nhóm, thanh toán IPN, hết hạn), kết quả thực nghiệm, hướng dẫn cài đặt
+### M9 — Kiểm thử, hoàn thiện, tài liệu ✅
+- [x] k6: 100–500 VU giữ cùng một ghế / cùng một cụm → đúng 1 thành công; ghi kết quả
+- [x] k6: tải hỗn hợp (xem sơ đồ + giữ ghế + thanh toán), đo p95
+- [x] E2E Playwright: đặt vé cá nhân, nhóm 3 người, soát vé (+ responsive 375 px)
+- [x] Rà soát bảo mật (quyền, rate limit, IDOR trên đơn/nhóm/vé)
+- [x] Responsive mobile, trạng thái loading/lỗi, rỗng
+- [x] Tài liệu: use case, ERD, state machine, sequence (giữ ghế nhóm, thanh toán IPN, hết hạn), kết quả thực nghiệm, hướng dẫn cài đặt; kịch bản demo
 - **Xong khi**: toàn bộ checklist bảo vệ ở mục 12 đạt.
+
+**Quyết định cài đặt M9**:
+- Máy dev không cài k6 → kịch bản viết hai bản cùng logic: `tools/k6/*.js` (cho máy có k6) và `tools/load/run.mjs` (Node 22, chạy được ngay, ghi CSV + SVG vào `docs/experiments/load/`). Số liệu trong tài liệu đo bằng bản Node.
+- E2E Playwright chạy trên hệ thống dev đang chạy (không tự khởi động server), dùng Chrome cài sẵn (`channel: chrome`), 1 worker; người dùng test đăng ký mới mỗi lần qua API nên chạy lặp lại được.
+- Nhật ký kiểm toán ghi trong transaction hiện tại (`REQUIRED`, thay cho `REQUIRES_NEW`); nghiệp vụ cần giữ nhật ký khi từ chối dùng `noRollbackFor = BusinessException` (đăng nhập, refresh). Listener ghi thông báo sau commit chạy `@Async` trên pool cấu hình (`AsyncConfig`); test đặt `app.async.synchronous=true` để chạy đồng bộ. Lý do: mỗi request từng giữ 2 kết nối DB → cạn pool khi tải cao (phát hiện bằng kiểm thử tải).
+- IP máy khách chỉ lấy từ `getRemoteAddr()`; sau reverse proxy dùng `server.forward-headers-strategy=native` (chỉ tin proxy nội bộ) — trước đó tin thẳng `X-Forwarded-For` nên vượt được rate limit đăng nhập.
+- Web người dùng: màn hình < 768 px dùng nút menu + ngăn kéo thay cho menu ngang.
 
 ### M10 — Mở rộng (nếu còn thời gian)
 - Mô hình B (mỗi người tự thanh toán), sở thích chỗ ngồi thành viên, combo bắp nước, đánh giá phim, điểm thưởng/voucher, phim yêu thích, gợi ý phim, MoMo.
@@ -793,7 +801,7 @@ Mỗi giai đoạn kết thúc bằng: code chạy được, test xanh, cập nh
 | Đồng thời (k6) | 0 lần bán trùng ghế qua mọi kịch bản; có số liệu và biểu đồ |
 | Hiệu năng | API sơ đồ ghế p95 < 200 ms; đề xuất cụm ghế p95 < 50 ms (300 ghế) |
 | Thực nghiệm thuật toán | Bảng so sánh với 2 baseline theo tỷ lệ lấp đầy |
-| Demo | Script demo: 2 trình duyệt realtime, nhóm 5 người, tranh ghế, callback trùng |
+| Demo | Script demo: 2 trình duyệt realtime, nhóm 5 người, tranh ghế, callback trùng — `docs/demo-script.md` |
 
 ---
 
@@ -821,3 +829,4 @@ Mỗi giai đoạn kết thúc bằng: code chạy được, test xanh, cập nh
 | 2026-10-30 | M6 | Module group: V7 (`booking_groups`, `group_members`, `group_showtime_options`, `group_votes`, `group_seat_assignments`, `group_events`, `seat_suggestion_logs`, 6 tham số `seat_weight_*`). API `/groups/**` + `/me/groups`: tạo/sửa, mã mời (xem trước, tham gia, tạo lại), rời/loại/chuyển trưởng nhóm, RSVP + khách + ngân sách, đề xuất & bình chọn suất, tổng hợp nhu cầu kèm trạng thái cụm ghế từng suất (SAME_ROW/SPLIT/NONE) và cảnh báo độ tuổi, chốt/mở chốt, đề xuất cụm ghế (seat-engine, trọng số từ cấu hình, ghi log), chấm điểm chọn tay, xem trước realtime, giữ ghế nguyên khối (thất bại → 409 kèm phương án mới), tạo đơn → thanh toán chung luồng `/orders`, phân phối vé tự động + sửa tay (vé hiện trong "Vé của tôi" của từng người), chia tiền tham khảo, hủy nhóm. Job hạn chốt: nhắc thành viên chưa phản hồi, nhóm quá hạn → EXPIRED. STOMP `/topic/groups/{id}` chỉ cho thành viên. Web: Nhóm của tôi, tạo nhóm (từ trang phim), link mời, trang tiến trình nhóm (RSVP, bình chọn, chốt, sơ đồ xem trước/đã giữ, vé & chia tiền), trang chọn ghế nhóm. Backend 106 test API (10 test nhóm). | Chạy thử trên trình duyệt với 3 tài khoản: tham gia/RSVP/bình chọn cập nhật realtime trên trang trưởng nhóm; chốt 4 vé → 5 phương án cùng hàng có điểm; giữ ghế → thanh toán giả lập → nhóm BOOKED, vé chia đúng (trưởng nhóm 1, thành viên 2 gồm khách, thành viên khác 1), chia tiền 110k/220k/110k; tranh ghế với nhóm khác → cảnh báo + 5 phương án mới không chứa ghế bị mất. Sửa khi chạy thử: ghế "đang giữ" trùng màu ghế VIP → đổi sang nền sọc (áp dụng mọi sơ đồ); thêm chú thích sơ đồ ở trang chọn ghế nhóm. E2E Playwright dời sang M9. Thứ tự khóa nhóm → đơn → lượt giữ; luồng ngược (job hết hạn báo về nhóm) có thể deadlock hiếm gặp → PostgreSQL hủy một bên, client nhận 409 / job thử lại lượt sau. |
 | 2026-10-30 | M7 | V8 `refunds`. Module payment: `RefundService` (hoàn tự động nếu cổng hỗ trợ — cổng giả lập; còn lại PENDING chờ admin hoàn thủ công), `VnpayProvider` (API 2.1.0, HMAC-SHA512, `vnp_TxnRef` = mã đơn + 6 số, IPN GET trả `RspCode`, trang return gửi kết quả đã ký về backend), danh sách cổng đang bật. Đặt vé: khách hủy đơn đã thanh toán trước `cancel_before_hours` → vé CANCELLED, ghế mở bán lại, hoàn `refund_percent` → REFUNDED; BR17 nay tự hoàn; trưởng nhóm hủy đơn nhóm (GRP21); admin hủy suất đã bán → hủy mọi đơn, hoàn 100 %, nhóm đã chốt quay lại OPEN, nhóm đã đặt → CANCELLED, thông báo. Soát vé `/admin/checkin` (quyền `ticket:checkin`): QR vé hoặc QR cả đơn, mở trước 2 giờ tới hết suất, quét lại bị từ chối. Admin xác nhận hoàn thủ công. Job hoàn tất đơn PAID/nhóm BOOKED sau suất chiếu. Web: hủy vé + thông tin hoàn tiền, QR cả đơn, chọn cổng thanh toán động, trang return VNPay, hủy đặt vé nhóm. Admin: trang Soát vé (camera @zxing + dán mã), trang Hoàn tiền, nút hủy suất đã bán. Backend 113 test API. | Chạy thử: hủy vé trên web → hoàn 225.000 ₫, vé "Đã hủy"; soát vé ở admin: vé lẻ hợp lệ → quét lại bị chặn → QR đơn soát nốt 2 vé → QR giả bị chặn. **VNPay chưa chạy với sandbox thật** (cần mã merchant + khóa; luồng đã test bằng chữ ký mô phỏng đúng thuật toán). Sửa khi chạy thử: dev server web không nạp lại thay đổi → khởi động lại preview. |
 | 2026-10-30 | M8 | V9 `promotions`, `promotion_usages`, `orders.promotion_code`. Module promotion: CRUD mã (%, số tiền, giảm tối đa, đơn tối thiểu, **số vé tối thiểu cho nhóm**, thời gian, tổng lượt, lượt/người), áp/bỏ mã vào đơn chờ thanh toán (khóa dòng mã, giữ lượt, trả lượt khi hủy/hết hạn). Module stats (read model SQL): `/admin/stats/overview` (doanh thu, vé, đơn, giá trị đơn TB, lấp đầy, thanh toán thất bại, đơn hết hạn, hoàn tiền, theo ngày, top phim, theo rạp), `/admin/stats/groups` (chuyển đổi tạo→đặt, quy mô, thành viên TB, giờ tạo→đặt, tỷ lệ cụm liền kề, chọn #1 / tự chọn, lý do thất bại), `/admin/reports/orders.csv`. Quản trị đơn (tìm/lọc, chi tiết + lịch sử + giao dịch đối soát, hủy & hoàn 100 % theo quyền `order:refund`), quản trị nhóm (danh sách, chi tiết, nhật ký, các lần đề xuất ghế). Admin UI: Dashboard (biểu đồ cột SVG tự viết), Đơn đặt vé, Nhóm đặt vé, Mã giảm giá, Nhật ký thao tác. Web: ô mã giảm giá ở trang thanh toán, dòng giảm giá trong đơn. Backend 116 test API (4 test báo cáo khớp số liệu). | Lỗi phát hiện khi chạy toàn bộ test: `created_at` do JPA auditing lấy giờ hệ thống, các mốc khác lấy `Clock` → thống kê theo ngày lệch khi đồng hồ khác giờ hệ thống; sửa auditing dùng `Clock`. Chạy thử: dashboard dev khớp dữ liệu (4 nhóm, 1 đã đặt = 25 %, 4 vé/nhóm, hoàn 225.000 ₫), chi tiết đơn/nhóm, tạo mã "NHOM5" qua UI, web báo đúng "Mã chỉ áp dụng cho đơn từ 5 vé". Biểu đồ: giới hạn bề rộng cột khi ít ngày. |
+| 2026-10-30 | M9 | E2E Playwright (`frontend/e2e`, `npm run e2e`): đặt vé cá nhân → thanh toán → vé QR → hủy & hoàn tiền; nhóm 3 tài khoản (tạo, mời, RSVP realtime, đề xuất & chốt suất, đề xuất cụm ghế, giữ, thanh toán, mỗi người 1 vé); soát vé (hợp lệ / quét lại bị từ chối / QR đơn / chữ ký giả); responsive 375 px + menu ngăn kéo. Kiểm thử tải `tools/load/run.mjs` + `tools/k6/`: 100/300/500 người cùng giữ 1 ghế → đúng 1 thành công, cụm 4 ghế chồng lấn → đúng 2 cụm rời nhau, 0 ghế trùng, sơ đồ khớp; sơ đồ ghế 50 VU không nghỉ p95 43 ms; tải hỗn hợp 100 VU/60 s: 10 742 request, 601 đơn PAID, 0 lỗi, 0 ghế bán trùng, p95 mọi thao tác < 13 ms. Sửa: cạn pool kết nối do `REQUIRES_NEW` (audit, thông báo), `@Async` không giới hạn luồng, giả IP qua `X-Forwarded-For`. `AccessControlIntegrationTest` (IDOR đơn/lượt giữ/nhóm/thông báo, 403 API quản trị, 401). Tài liệu: `docs/use-cases.md`, `sequences.md`, `security-review.md`, `demo-script.md`, `experiments/load/README.md`, ERD + máy trạng thái bổ sung M4–M8, README (E2E, kiểm thử tải, mục lục). `tools/demo/seed-demo.mjs`. | Backend 123 test API + 29 engine/bench xanh; frontend lint + 24 unit test xanh; E2E 5/5 xanh trên Chrome. |

@@ -8,6 +8,7 @@
     "build": "ng build web && ng build admin",
     "test": "ng test web --watch=false --browsers=ChromeHeadless && ng test admin --watch=false --browsers=ChromeHeadless && ng test shared --watch=false --browsers=ChromeHeadless",
     "lint": "ng lint web && ng lint admin && ng lint shared",
+    "e2e": "playwright test",
     "format": "prettier --write \"projects/**/*.{ts,html,less,json}\""
   },
   "private": true,
@@ -33,6 +34,7 @@
     "@angular-devkit/build-angular": "^19.2.27",
     "@angular/cli": "^19.2.27",
     "@angular/compiler-cli": "^19.2.0",
+    "@playwright/test": "^1.56.1",
     "@types/jasmine": "~5.1.0",
     "angular-eslint": "19.8.1",
     "eslint": "^9.28.0",

@@ -7,13 +7,15 @@ Kế hoạch, phạm vi và thiết kế: [PLAN.md](PLAN.md).
 | `backend/` | Java 17 + Spring Boot 3 (Maven multi-module: `seat-engine`, `seat-bench`, `api`) |
 | `frontend/` | Angular 19 + NG-ZORRO (app `web`, app `admin`, thư viện `shared`) |
 | `docs/` | ERD, sơ đồ trạng thái, sequence, kết quả thực nghiệm |
-| `tools/k6/` | Kịch bản kiểm thử tải và đồng thời |
+| `tools/k6/`, `tools/load/` | Kịch bản kiểm thử tải và đồng thời (k6 / Node) |
+| `tools/demo/` | Chuẩn bị dữ liệu cho buổi demo |
 
 ## Yêu cầu
 
 - **JDK 17** (biến `JAVA_HOME` phải trỏ tới JDK 17)
 - **Node.js 20.11+** (khuyến nghị 22 LTS)
-- **Docker Desktop** (PostgreSQL, Redis, Mailpit và test tích hợp bằng Testcontainers)
+- **Docker Desktop** (tùy chọn: PostgreSQL, Redis, Mailpit) — không có Docker vẫn chạy được bằng PostgreSQL nhúng
+- **Google Chrome** (unit test frontend và E2E Playwright)
 
 ## Chạy dự án
 
@@ -80,3 +82,36 @@ cd frontend && npm run format
 ```
 
 Quy tắc phân tầng backend (L1–L9) được kiểm tra tự động bởi `ArchitectureTest`; quy tắc frontend (F1–F5) xem PLAN.md mục 2A.3.
+
+### E2E (Playwright)
+
+Chạy trên hệ thống dev đang chạy (backend 8080, web 4200, admin 4300), dùng Chrome đã cài trên máy:
+
+```bash
+cd frontend && npm run e2e           # đặt vé cá nhân, nhóm 3 người, soát vé, responsive 375 px
+```
+
+Báo cáo HTML: `frontend/e2e-report/`.
+
+### Kiểm thử tải & đồng thời
+
+```bash
+node tools/load/run.mjs same-seat --vus 100,300,500   # N người cùng giữ 1 ghế → đúng 1 thành công
+node tools/load/run.mjs mixed --vus 100 --duration 60
+```
+
+Bản k6 tương đương ở `tools/k6/`. Kết quả và phân tích: [docs/experiments/load/README.md](docs/experiments/load/README.md).
+
+## Tài liệu
+
+| Tài liệu | Nội dung |
+|---|---|
+| [PLAN.md](PLAN.md) | Phạm vi, quy tắc nghiệp vụ BR01–BR18, thiết kế, lộ trình, nhật ký tiến độ |
+| [docs/use-cases.md](docs/use-cases.md) | Tác nhân, sơ đồ use case, đặc tả use case trọng tâm |
+| [docs/erd.md](docs/erd.md) | Mô hình dữ liệu |
+| [docs/state-machines.md](docs/state-machines.md) | Máy trạng thái ghế, đơn, nhóm, refresh token |
+| [docs/sequences.md](docs/sequences.md) | Giữ ghế nhóm, thanh toán IPN, hết hạn giữ ghế |
+| [docs/experiments/README.md](docs/experiments/README.md) | Thực nghiệm thuật toán cụm ghế (so với 2 baseline, JMH) |
+| [docs/experiments/load/README.md](docs/experiments/load/README.md) | Kiểm thử đồng thời & hiệu năng |
+| [docs/security-review.md](docs/security-review.md) | Rà soát bảo mật |
+| [docs/demo-script.md](docs/demo-script.md) | Kịch bản demo bảo vệ |

@@ -1,0 +1,2 @@
+vus,duration_s,requests,rps,hold_ok,hold_409,hold_other,paid,errors,duplicate_sold_seats
+100,60,10742,179.0,1786,11,0,601,0,0

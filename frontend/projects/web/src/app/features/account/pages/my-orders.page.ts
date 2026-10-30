@@ -2,7 +2,9 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ORDER_STATUS_COLORS, ORDER_STATUS_LABELS, VN_OFFSET, VndPipe } from '@mb/shared';
+import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCardModule } from 'ng-zorro-antd/card';
+import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 
@@ -13,7 +15,7 @@ const PAGE_SIZE = 10;
 /** Lịch sử đơn hàng (BKG09). */
 @Component({
   selector: 'app-my-orders-page',
-  imports: [DatePipe, RouterLink, VndPipe, NzCardModule, NzTableModule, NzTagModule],
+  imports: [DatePipe, RouterLink, VndPipe, NzButtonModule, NzCardModule, NzEmptyModule, NzTableModule, NzTagModule],
   template: `
     <nz-card nzTitle="Lịch sử đơn hàng" [nzExtra]="ticketsLink">
       <nz-table
@@ -25,6 +27,8 @@ const PAGE_SIZE = 10;
         [nzPageIndex]="(store.orders()?.page ?? 0) + 1"
         [nzLoading]="store.loading()"
         nzSize="middle"
+        [nzNoResult]="noOrders"
+        [nzScroll]="{ x: '560px' }"
         (nzPageIndexChange)="store.loadOrders($event - 1, pageSize)"
       >
         <thead>
@@ -54,6 +58,10 @@ const PAGE_SIZE = 10;
         </tbody>
       </nz-table>
     </nz-card>
+    <ng-template #noOrders>
+      <nz-empty nzNotFoundContent="Bạn chưa có đơn hàng nào" [nzNotFoundFooter]="bookNow" />
+    </ng-template>
+    <ng-template #bookNow><a nz-button nzType="primary" routerLink="/movies">Đặt vé ngay</a></ng-template>
     <ng-template #ticketsLink><a routerLink="/account/tickets">Vé của tôi</a></ng-template>
   `,
   styles: `

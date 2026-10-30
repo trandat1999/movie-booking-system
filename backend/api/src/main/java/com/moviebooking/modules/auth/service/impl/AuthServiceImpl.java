@@ -59,8 +59,9 @@ public class AuthServiceImpl implements AuthService {
         return startSession(user, client);
     }
 
+    /** Không rollback khi từ chối đăng nhập để vẫn lưu nhật ký LOGIN_FAILED. */
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = BusinessException.class)
     public AuthResult login(LoginRequest request, ClientInfo client) {
         Optional<User> found = userService.findForLogin(request.identifier());
         if (found.isEmpty()) {
