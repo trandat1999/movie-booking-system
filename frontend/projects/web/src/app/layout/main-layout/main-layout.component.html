@@ -1,0 +1,38 @@
+<nz-layout class="layout">
+  <nz-header class="header">
+    <a class="logo" routerLink="/">MovieBooking</a>
+    <ul nz-menu nzMode="horizontal" nzTheme="dark" class="nav">
+      @for (item of navItems; track item.link) {
+        <li nz-menu-item nzMatchRouter [nzMatchRouterExact]="item.link === '/'">
+          <a [routerLink]="item.link">{{ item.label }}</a>
+        </li>
+      }
+    </ul>
+
+    @if (auth.user(); as user) {
+      <a nz-dropdown [nzDropdownMenu]="accountMenu" nzPlacement="bottomRight" class="account-trigger">
+        <nz-icon nzType="user" />
+        <span class="account-name">{{ user.fullName }}</span>
+        <nz-icon nzType="down" />
+      </a>
+      <nz-dropdown-menu #accountMenu="nzDropdownMenu">
+        <ul nz-menu>
+          <li nz-menu-item routerLink="/account"><nz-icon nzType="idcard" /> Tài khoản của tôi</li>
+          <li nz-menu-divider></li>
+          <li nz-menu-item tabindex="0" (click)="logout()" (keyup.enter)="logout()"><nz-icon nzType="logout" /> Đăng xuất</li>
+        </ul>
+      </nz-dropdown-menu>
+    } @else {
+      <div class="guest-actions">
+        <a nz-button nzType="text" class="register" routerLink="/register">Đăng ký</a>
+        <a nz-button nzType="primary" routerLink="/login">Đăng nhập</a>
+      </div>
+    }
+  </nz-header>
+
+  <nz-content class="content">
+    <router-outlet />
+  </nz-content>
+
+  <nz-footer class="footer">© {{ year }} MovieBooking — Hệ thống bán vé xem phim và đặt vị trí theo nhóm</nz-footer>
+</nz-layout>

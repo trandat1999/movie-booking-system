@@ -1,0 +1,211 @@
+<nz-card nzTitle="Lịch chiếu" [nzExtra]="extra">
+  <div class="filters">
+    <button nz-button (click)="shiftDay(-1)" aria-label="Ngày trước">‹</button>
+    <nz-date-picker [(ngModel)]="filterDate" (ngModelChange)="applyFilters()" nzFormat="EEEE dd/MM/yyyy" [nzAllowClear]="true" nzPlaceHolder="Tất cả ngày" />
+    <button nz-button (click)="shiftDay(1)" aria-label="Ngày sau">›</button>
+    <nz-select [(ngModel)]="filterCinemaId" (ngModelChange)="onFilterCinema($event)" nzAllowClear nzPlaceHolder="Rạp" class="select">
+      @for (c of store.cinemas(); track c.id) {
+        <nz-option [nzValue]="c.id" [nzLabel]="c.name" />
+      }
+    </nz-select>
+    <nz-select
+      [(ngModel)]="filterRoomId"
+      (ngModelChange)="applyFilters()"
+      nzAllowClear
+      nzPlaceHolder="Phòng"
+      class="select-sm"
+      [nzDisabled]="!filterCinemaId"
+    >
+      @for (r of filterRooms(); track r.id) {
+        <nz-option [nzValue]="r.id" [nzLabel]="r.name" />
+      }
+    </nz-select>
+    <nz-select [(ngModel)]="filterMovieId" (ngModelChange)="applyFilters()" nzAllowClear nzShowSearch nzPlaceHolder="Phim" class="select">
+      @for (m of store.movies(); track m.id) {
+        <nz-option [nzValue]="m.id" [nzLabel]="m.title" />
+      }
+    </nz-select>
+  </div>
+
+  <nz-table
+    #table
+    nzSize="middle"
+    [nzData]="store.showtimes()"
+    [nzLoading]="store.loading()"
+    [nzFrontPagination]="false"
+    [nzTotal]="store.total()"
+    [nzPageIndex]="store.query().page + 1"
+    [nzPageSize]="store.query().size"
+    (nzPageIndexChange)="store.changePage($event)"
+    [nzScroll]="{ x: '1000px' }"
+  >
+    <thead>
+      <tr>
+        <th nzWidth="130px">Giờ chiếu</th>
+        <th>Phim</th>
+        <th>Rạp / phòng</th>
+        <th>Định dạng</th>
+        <th>Ghế đã bán</th>
+        <th>Trạng thái</th>
+        <th nzRight nzWidth="140px">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (s of table.data; track s.id) {
+        <tr>
+          <td>
+            <div class="time">{{ s.startAt | date: 'HH:mm' : vn }} – {{ s.endAt | date: 'HH:mm' : vn }}</div>
+            <div class="muted">{{ s.startAt | date: 'dd/MM' : vn }} · {{ dayTypeLabels[s.dayType] }}</div>
+          </td>
+          <td>
+            <div class="title">{{ s.movieTitle }}</div>
+            <nz-tag>{{ s.ageRating }}</nz-tag><span class="muted">{{ s.durationMin }} phút</span>
+          </td>
+          <td>
+            <div>{{ s.cinemaName }}</div>
+            <div class="muted">{{ s.roomName }}</div>
+          </td>
+          <td>{{ formatLabels[s.format] }} · {{ audioLabels[s.audioType] }}</td>
+          <td class="seats">
+            <nz-progress [nzPercent]="occupancy(s)" nzSize="small" [nzShowInfo]="false" />
+            <span class="muted">
+              {{ s.seats.sold + s.seats.held | number }}/{{ s.seats.total - s.seats.blocked | number }}
+              @if (s.seats.blocked) {
+                · {{ s.seats.blocked }} khóa
+              }
+            </span>
+          </td>
+          <td><nz-tag [nzColor]="phaseColors[s.phase]">{{ phaseLabels[s.phase] }}</nz-tag></td>
+          <td nzRight class="actions">
+            @if (editable(s)) {
+              <button nz-button nzSize="small" (click)="open(s)">Sửa</button>
+              <button nz-button nzSize="small" nzDanger nz-popconfirm nzPopconfirmTitle="Hủy suất chiếu này?" (nzOnConfirm)="cancel(s)">
+                Hủy
+              </button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+</nz-card>
+
+<ng-template #extra>
+  <button nz-button nzType="primary" (click)="open(null)">Tạo suất chiếu</button>
+</ng-template>
+
+<nz-modal
+  [nzVisible]="editing() !== undefined"
+  [nzTitle]="editing() ? 'Sửa suất chiếu' : 'Tạo suất chiếu'"
+  nzOkText="Lưu"
+  nzCancelText="Đóng"
+  [nzOkLoading]="store.saving()"
+  [nzOkDisabled]="!canSubmit()"
+  nzWidth="640px"
+  (nzOnCancel)="editing.set(undefined)"
+  (nzOnOk)="submit()"
+>
+  <ng-container *nzModalContent>
+    @if (formError()) {
+      <nz-alert nzType="error" nzShowIcon [nzMessage]="formError()!" [nzDescription]="conflicts().length ? conflictList : null" class="alert" />
+      <ng-template #conflictList>
+        <ul class="conflicts">
+          @for (c of conflicts(); track c.id) {
+            <li>
+              {{ c.movieTitle }}: {{ c.startAt | date: 'HH:mm dd/MM' : vn }} – {{ c.endAt | date: 'HH:mm' : vn }}
+              (dọn phòng đến {{ c.blockedUntil | date: 'HH:mm' : vn }})
+            </li>
+          }
+        </ul>
+      </ng-template>
+    }
+    <form nz-form nzLayout="vertical" class="form">
+      <nz-form-item class="span-2">
+        <nz-form-label nzRequired>Phim</nz-form-label>
+        <nz-form-control>
+          <nz-select name="movieId" [(ngModel)]="form.movieId" (ngModelChange)="refreshQuote()" nzShowSearch nzPlaceHolder="Chọn phim" [nzDisabled]="!!editing()">
+            @for (m of store.movies(); track m.id) {
+              <nz-option [nzValue]="m.id" [nzLabel]="m.title + ' (' + m.durationMin + ' phút)'" />
+            }
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-label nzRequired>Rạp</nz-form-label>
+        <nz-form-control>
+          <nz-select name="cinemaId" [(ngModel)]="form.cinemaId" (ngModelChange)="onFormCinema($event)" nzPlaceHolder="Chọn rạp" [nzDisabled]="!!editing()">
+            @for (c of store.cinemas(); track c.id) {
+              <nz-option [nzValue]="c.id" [nzLabel]="c.name" />
+            }
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-label nzRequired>Phòng</nz-form-label>
+        <nz-form-control>
+          <nz-select name="roomId" [(ngModel)]="form.roomId" (ngModelChange)="refreshQuote()" nzPlaceHolder="Chọn phòng" [nzDisabled]="!!editing() || !form.cinemaId">
+            @for (r of formRooms(); track r.id) {
+              <nz-option [nzValue]="r.id" [nzLabel]="r.name + ' · ' + r.capacity + ' chỗ'" />
+            }
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-label nzRequired>Ngày chiếu</nz-form-label>
+        <nz-form-control>
+          <nz-date-picker name="date" [(ngModel)]="form.date" (ngModelChange)="refreshQuote()" nzFormat="dd/MM/yyyy" class="full" />
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-label nzRequired>Giờ bắt đầu (giờ VN)</nz-form-label>
+        <nz-form-control>
+          <nz-time-picker name="time" [(ngModel)]="form.time" (ngModelChange)="refreshQuote()" nzFormat="HH:mm" [nzMinuteStep]="5" class="full" />
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-label>Định dạng</nz-form-label>
+        <nz-form-control>
+          <nz-select name="format" [(ngModel)]="form.format" (ngModelChange)="refreshQuote()">
+            @for (o of formatOptions; track o.value) {
+              <nz-option [nzValue]="o.value" [nzLabel]="o.label" />
+            }
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-label>Âm thanh</nz-form-label>
+        <nz-form-control>
+          <nz-select name="audioType" [(ngModel)]="form.audioType">
+            @for (o of audioOptions; track o.value) {
+              <nz-option [nzValue]="o.value" [nzLabel]="o.label" />
+            }
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+
+    @if (quote(); as q) {
+      <div class="quote">
+        <div>
+          <strong>{{ dayTypeLabels[q.dayType] }}</strong>
+          @if (q.endAt) {
+            · kết thúc lúc <strong>{{ q.endAt | date: 'HH:mm' : vn }}</strong>
+          }
+        </div>
+        <div class="prices">
+          @for (p of q.prices; track p.seatTypeCode) {
+            <label>
+              <span>{{ p.seatTypeName }}</span>
+              <nz-input-number [(ngModel)]="prices[p.seatTypeCode]" [nzMin]="1000" [nzStep]="5000" [nzFormatter]="vndFormat" [nzParser]="vndParse" />
+              @if (prices[p.seatTypeCode] !== p.price) {
+                <span class="muted">bảng giá: {{ p.price | vnd }}</span>
+              }
+            </label>
+          }
+        </div>
+      </div>
+    } @else {
+      <p class="muted">Chọn phòng, ngày và giờ để xem giá và giờ kết thúc.</p>
+    }
+  </ng-container>
+</nz-modal>

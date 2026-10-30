@@ -1,0 +1,88 @@
+<nz-card nzTitle="Phim" [nzExtra]="extra">
+  <div class="filters">
+    <nz-input-group nzPrefixIcon="search" class="keyword">
+      <input nz-input placeholder="Tên phim" [(ngModel)]="keyword" (keyup.enter)="search()" aria-label="Tên phim" />
+    </nz-input-group>
+    <nz-select [(ngModel)]="status" nzAllowClear nzPlaceHolder="Trạng thái" class="select" aria-label="Trạng thái">
+      @for (o of statusOptions; track o.value) {
+        <nz-option [nzValue]="o.value" [nzLabel]="o.label" />
+      }
+    </nz-select>
+    <nz-select [(ngModel)]="genreId" nzAllowClear nzShowSearch nzPlaceHolder="Thể loại" class="select" aria-label="Thể loại">
+      @for (g of store.genres(); track g.id) {
+        <nz-option [nzValue]="g.id" [nzLabel]="g.name" />
+      }
+    </nz-select>
+    <button nz-button nzType="primary" (click)="search()">Tìm kiếm</button>
+  </div>
+
+  <nz-table
+    #table
+    nzSize="middle"
+    [nzData]="store.movies()"
+    [nzLoading]="store.loadingMovies()"
+    [nzFrontPagination]="false"
+    [nzTotal]="store.movieTotal()"
+    [nzPageIndex]="store.movieQuery().page + 1"
+    [nzPageSize]="store.movieQuery().size"
+    nzShowSizeChanger
+    [nzScroll]="{ x: '900px' }"
+    (nzPageIndexChange)="store.changeMoviePage($event, store.movieQuery().size)"
+    (nzPageSizeChange)="store.changeMoviePage(1, $event)"
+  >
+    <thead>
+      <tr>
+        <th nzWidth="64px"></th>
+        <th>Phim</th>
+        <th>Thể loại</th>
+        <th>Thời lượng</th>
+        <th>Khởi chiếu</th>
+        <th>Trạng thái</th>
+        <th nzRight nzWidth="140px">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (movie of table.data; track movie.id) {
+        <tr>
+          <td><adm-movie-poster [url]="movie.posterUrl" [title]="movie.title" /></td>
+          <td>
+            <a [routerLink]="[movie.id]" class="title">{{ movie.title }}</a>
+            <div>
+              <nz-tag [nzColor]="ratingColors[movie.ageRating]">{{ movie.ageRating }}</nz-tag>
+              <span class="muted">{{ movie.language }}</span>
+            </div>
+          </td>
+          <td>
+            @for (g of movie.genres; track g.id) {
+              <nz-tag>{{ g.name }}</nz-tag>
+            }
+          </td>
+          <td>{{ movie.durationMin }} phút</td>
+          <td>{{ movie.releaseDate | date: 'dd/MM/yyyy' }}</td>
+          <td><nz-tag [nzColor]="statusColors[movie.status]">{{ statusLabels[movie.status] }}</nz-tag></td>
+          <td nzRight class="actions">
+            <a nz-button nzSize="small" [routerLink]="[movie.id]">Sửa</a>
+            <button
+              nz-button
+              nzSize="small"
+              nzDanger
+              nz-popconfirm
+              nzPopconfirmTitle="Xóa phim này? Phim đã có suất chiếu chỉ có thể chuyển sang Ngừng chiếu."
+              (nzOnConfirm)="remove(movie)"
+            >
+              Xóa
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+</nz-card>
+
+<ng-template #extra>
+  <div class="extra">
+    <a nz-button routerLink="genres">Thể loại</a>
+    <a nz-button routerLink="people">Đạo diễn & diễn viên</a>
+    <a nz-button nzType="primary" routerLink="new">Thêm phim</a>
+  </div>
+</ng-template>

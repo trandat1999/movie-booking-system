@@ -1,0 +1,44 @@
+# Dịch vụ phụ trợ cho môi trường dev: docker compose up -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: moviebooking-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-moviebooking}
+      POSTGRES_USER: ${DB_USERNAME:-moviebooking}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-moviebooking}
+      TZ: UTC
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: moviebooking-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Hộp thư giả lập: SMTP ở cổng 1025, giao diện xem email tại http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: moviebooking-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  postgres-data:
+  redis-data:

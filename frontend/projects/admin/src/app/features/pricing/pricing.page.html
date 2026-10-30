@@ -1,0 +1,101 @@
+<nz-card nzTitle="Giá cơ bản (1 chỗ ngồi)" [nzExtra]="matrixExtra">
+  <p class="hint">
+    Giá một ghế = giá cơ bản × số chỗ của ghế + phụ thu loại ghế. Giá được chốt khi tạo suất chiếu; thay đổi ở đây chỉ áp dụng cho
+    suất tạo sau.
+  </p>
+  @if (store.basePrices().length) {
+  <nz-table [nzData]="formats" [nzShowPagination]="false" nzSize="middle" [nzScroll]="{ x: '520px' }">
+    <thead>
+      <tr>
+        <th>Định dạng</th>
+        @for (d of dayTypes; track d) {
+          <th>{{ dayTypeLabels[d] }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (f of formats; track f) {
+        <tr>
+          <td>{{ formatLabels[f] }}</td>
+          @for (d of dayTypes; track d) {
+            <td>
+              <nz-input-number
+                [(ngModel)]="matrix[f + ':' + d]"
+                [nzMin]="1000"
+                [nzStep]="5000"
+                [attr.aria-label]="'Giá ' + formatLabels[f] + ' ' + dayTypeLabels[d]"
+              />
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+  }
+</nz-card>
+<ng-template #matrixExtra>
+  <button nz-button nzType="primary" [nzLoading]="store.saving()" (click)="saveMatrix()">Lưu bảng giá</button>
+</ng-template>
+
+<nz-card nzTitle="Loại ghế & phụ thu">
+  <nz-table #types [nzData]="store.seatTypes()" [nzShowPagination]="false" nzSize="middle" [nzScroll]="{ x: '760px' }">
+    <thead>
+      <tr>
+        <th>Mã</th>
+        <th>Tên hiển thị</th>
+        <th>Số chỗ</th>
+        <th>Phụ thu</th>
+        <th>Màu</th>
+        <th>Ví dụ 2D ngày thường</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (t of types.data; track t.code) {
+        <tr>
+          <td>{{ t.code }}</td>
+          <td><input nz-input [(ngModel)]="t.name" [attr.aria-label]="'Tên ' + t.code" /></td>
+          <td>{{ t.capacity }}</td>
+          <td><nz-input-number [(ngModel)]="t.surcharge" [nzMin]="0" [nzStep]="5000" [attr.aria-label]="'Phụ thu ' + t.code" /></td>
+          <td><input type="color" [(ngModel)]="t.color" [attr.aria-label]="'Màu ' + t.code" /></td>
+          <td>{{ example('TWO_D', 'WEEKDAY', t) | vnd }}</td>
+          <td><button nz-button nzSize="small" (click)="saveSeatType(t)">Lưu</button></td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+</nz-card>
+
+<nz-card [nzTitle]="'Ngày lễ năm ' + store.year()" [nzExtra]="holidayExtra">
+  <div class="add-holiday">
+    <nz-date-picker [(ngModel)]="holidayDate" nzFormat="dd/MM/yyyy" nzPlaceHolder="Ngày" />
+    <input nz-input [(ngModel)]="holidayName" placeholder="Tên ngày lễ" aria-label="Tên ngày lễ" class="holiday-name" />
+    <button nz-button nzType="primary" (click)="addHoliday()" [disabled]="!holidayDate || !holidayName.trim()">Thêm</button>
+  </div>
+  <nz-table #holidays [nzData]="store.holidays()" [nzShowPagination]="false" nzSize="small">
+    <thead>
+      <tr>
+        <th>Ngày</th>
+        <th>Tên</th>
+        <th nzWidth="80px"></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (h of holidays.data; track h.date) {
+        <tr>
+          <td>{{ h.date | date: 'EEEE dd/MM/yyyy' }}</td>
+          <td>{{ h.name }}</td>
+          <td>
+            <button nz-button nzSize="small" nzDanger nz-popconfirm nzPopconfirmTitle="Xóa ngày lễ này?" (nzOnConfirm)="deleteHoliday(h.date)">
+              Xóa
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+</nz-card>
+<ng-template #holidayExtra>
+  <button nz-button (click)="store.changeYear(-1)" aria-label="Năm trước">‹</button>
+  <button nz-button (click)="store.changeYear(1)" aria-label="Năm sau" class="next">›</button>
+</ng-template>

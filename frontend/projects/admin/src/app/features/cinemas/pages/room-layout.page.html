@@ -1,0 +1,111 @@
+@if (layout(); as l) {
+  <nz-card [nzTitle]="l.room.cinemaName + ' — ' + l.room.name" [nzExtra]="extra">
+    <div class="meta">
+      <nz-tag>{{ roomTypeLabels[l.room.roomType] }}</nz-tag>
+      <span>{{ summary().total }} ghế · {{ summary().capacity }} chỗ ngồi</span>
+      @for (t of seatTypes(); track t.code) {
+        <span class="legend"><i [style.background]="t.color"></i>{{ t.name }}: {{ summary().counts.get(t.code) ?? 0 }}</span>
+      }
+      @if (locked()) {
+        <span class="legend"><i class="inactive"></i>Ngừng bán</span>
+      }
+    </div>
+
+    @if (locked()) {
+      <nz-alert
+        nzType="warning"
+        nzShowIcon
+        nzMessage="Phòng đã có suất chiếu nên sơ đồ bị khóa để mã ghế không thay đổi."
+        nzDescription="Bấm vào một ghế để ngừng bán (ghế hỏng) hoặc mở bán lại. Thay đổi áp dụng cho các suất chưa chiếu."
+        class="alert"
+      />
+    } @else {
+      <div class="toolbar">
+        <div class="tool-group">
+          <span class="tool-label">Bút vẽ:</span>
+          <nz-radio-group [(ngModel)]="brush" nzButtonStyle="solid">
+            <!-- nz-radio-button / nz-checkbox tự render input bên trong label -->
+            @for (t of seatTypes(); track t.code) {
+              <!-- eslint-disable-next-line @angular-eslint/template/label-has-associated-control -->
+              <label nz-radio-button [nzValue]="t.code">{{ t.name }}</label>
+            }
+            <!-- eslint-disable-next-line @angular-eslint/template/label-has-associated-control -->
+            <label nz-radio-button [nzValue]="erase">Xóa ghế</label>
+          </nz-radio-group>
+        </div>
+        <div class="tool-group">
+          <span class="tool-label">Lưới:</span>
+          <nz-input-number
+            [ngModel]="gridRows()"
+            (ngModelChange)="resize($event, gridCols())"
+            [nzMin]="1"
+            [nzMax]="30"
+            aria-label="Số hàng"
+          />
+          <span>hàng ×</span>
+          <nz-input-number
+            [ngModel]="gridCols()"
+            (ngModelChange)="resize(gridRows(), $event)"
+            [nzMin]="1"
+            [nzMax]="40"
+            aria-label="Số cột"
+          />
+          <span>cột</span>
+        </div>
+      </div>
+
+      <details class="quick">
+        <summary>Tạo nhanh sơ đồ</summary>
+        <div class="quick-form">
+          <label>Số hàng <nz-input-number [(ngModel)]="quick.rows" [nzMin]="1" [nzMax]="30" /></label>
+          <label>Ghế mỗi hàng <nz-input-number [(ngModel)]="quick.seatsPerRow" [nzMin]="1" [nzMax]="38" /></label>
+          <label>Lối đi sau ghế số <input nz-input [(ngModel)]="quick.aisles" class="aisles" placeholder="3, 9" /></label>
+          <label>Hàng VIP từ <nz-input-number [(ngModel)]="quick.vipFrom" [nzMin]="0" [nzMax]="30" /></label>
+          <label>đến <nz-input-number [(ngModel)]="quick.vipTo" [nzMin]="0" [nzMax]="30" /></label>
+          <!-- eslint-disable-next-line @angular-eslint/template/label-has-associated-control -->
+          <label nz-checkbox [(ngModel)]="quick.coupleLastRow">Hàng cuối là ghế đôi</label>
+          <button nz-button (click)="generate()">Tạo</button>
+        </div>
+      </details>
+
+      <p class="hint">
+        Bấm ô trống để đặt ghế theo bút vẽ; bấm ghế để đổi loại hoặc xóa. Cột/hàng để trống là lối đi. Nhãn hàng (A, B…)
+        và số ghế được tính khi lưu.
+      </p>
+    }
+
+    @if (errorMessage()) {
+      <nz-alert nzType="error" nzShowIcon [nzMessage]="errorMessage()!" [nzDescription]="errorList" class="alert" />
+      <ng-template #errorList>
+        <ul class="errors">
+          @for (e of errors(); track $index) {
+            <li>{{ e }}</li>
+          }
+        </ul>
+      </ng-template>
+    }
+
+    <lib-seat-grid
+      [gridRows]="gridRows()"
+      [gridCols]="gridCols()"
+      [seats]="gridSeats()"
+      [colors]="colors()"
+      [editable]="!locked()"
+      [showLabels]="!dirty()"
+      (cellClick)="onCell($event)"
+      (seatClick)="onSeat($event)"
+    />
+  </nz-card>
+  <ng-template #extra>
+    <div class="actions">
+      <a nz-button [routerLink]="['/cinemas', cinemaId()]">← Phòng chiếu</a>
+      @if (!locked()) {
+        <button nz-button nz-popconfirm nzPopconfirmTitle="Xóa toàn bộ ghế trong bản nháp?" (nzOnConfirm)="clear()">Xóa hết</button>
+        <button nz-button [disabled]="!dirty()" (click)="reset()">Hoàn tác</button>
+        <button nz-button nzType="primary" [disabled]="!dirty()" [nzLoading]="store.saving()" (click)="save()">Lưu sơ đồ</button>
+      }
+    </div>
+  </ng-template>
+} @else {
+  <nz-card><nz-skeleton [nzActive]="true" /></nz-card>
+}

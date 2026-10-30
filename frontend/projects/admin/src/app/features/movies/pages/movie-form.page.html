@@ -1,0 +1,161 @@
+<nz-card [nzTitle]="isEdit ? 'Sửa phim' : 'Thêm phim'">
+  @if (loading()) {
+    <nz-skeleton [nzActive]="true" />
+  } @else {
+    @if (error()) {
+      <nz-alert nzType="error" [nzMessage]="error()!" nzShowIcon class="alert" />
+    }
+    <form nz-form nzLayout="vertical" [formGroup]="form" (ngSubmit)="submit()">
+      <div nz-row [nzGutter]="24">
+        <div nz-col [nzXs]="24" [nzLg]="16">
+          <nz-form-item>
+            <nz-form-label nzFor="title" nzRequired>Tên phim</nz-form-label>
+            <nz-form-control nzErrorTip="Vui lòng nhập tên phim (tối đa 200 ký tự)">
+              <input nz-input id="title" formControlName="title" />
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label nzFor="originalTitle">Tên gốc</nz-form-label>
+            <nz-form-control>
+              <input nz-input id="originalTitle" formControlName="originalTitle" />
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label nzFor="description">Mô tả</nz-form-label>
+            <nz-form-control>
+              <textarea nz-input id="description" formControlName="description" [nzAutosize]="{ minRows: 3, maxRows: 8 }"></textarea>
+            </nz-form-control>
+          </nz-form-item>
+
+          <div nz-row [nzGutter]="16">
+            <div nz-col [nzXs]="24" [nzSm]="8">
+              <nz-form-item>
+                <nz-form-label nzFor="durationMin" nzRequired>Thời lượng (phút)</nz-form-label>
+                <nz-form-control nzErrorTip="1–600 phút">
+                  <nz-input-number id="durationMin" formControlName="durationMin" [nzMin]="1" [nzMax]="600" class="full" />
+                </nz-form-control>
+              </nz-form-item>
+            </div>
+            <div nz-col [nzXs]="24" [nzSm]="8">
+              <nz-form-item>
+                <nz-form-label nzFor="releaseDate" nzRequired>Khởi chiếu</nz-form-label>
+                <nz-form-control nzErrorTip="Vui lòng chọn ngày khởi chiếu">
+                  <nz-date-picker id="releaseDate" formControlName="releaseDate" nzFormat="dd/MM/yyyy" class="full" />
+                </nz-form-control>
+              </nz-form-item>
+            </div>
+            <div nz-col [nzXs]="24" [nzSm]="8">
+              <nz-form-item>
+                <nz-form-label nzFor="language" nzRequired>Ngôn ngữ</nz-form-label>
+                <nz-form-control nzErrorTip="Vui lòng nhập ngôn ngữ">
+                  <input nz-input id="language" formControlName="language" />
+                </nz-form-control>
+              </nz-form-item>
+            </div>
+          </div>
+
+          <div nz-row [nzGutter]="16">
+            <div nz-col [nzXs]="24" [nzSm]="12">
+              <nz-form-item>
+                <nz-form-label nzFor="ageRating" nzRequired>Phân loại độ tuổi</nz-form-label>
+                <nz-form-control>
+                  <nz-select id="ageRating" formControlName="ageRating">
+                    @for (o of ratingOptions; track o.value) {
+                      <nz-option [nzValue]="o.value" [nzLabel]="o.label" />
+                    }
+                  </nz-select>
+                </nz-form-control>
+              </nz-form-item>
+            </div>
+            <div nz-col [nzXs]="24" [nzSm]="12">
+              <nz-form-item>
+                <nz-form-label nzFor="status" nzRequired>Trạng thái</nz-form-label>
+                <nz-form-control>
+                  <nz-select id="status" formControlName="status">
+                    @for (o of statusOptions; track o.value) {
+                      <nz-option [nzValue]="o.value" [nzLabel]="o.label" />
+                    }
+                  </nz-select>
+                </nz-form-control>
+              </nz-form-item>
+            </div>
+          </div>
+
+          <nz-form-item>
+            <nz-form-label nzFor="genreIds" nzRequired>Thể loại</nz-form-label>
+            <nz-form-control nzErrorTip="Chọn ít nhất một thể loại">
+              <nz-select id="genreIds" nzMode="multiple" formControlName="genreIds" nzPlaceHolder="Chọn thể loại">
+                @for (g of store.genres(); track g.id) {
+                  <nz-option [nzValue]="g.id" [nzLabel]="g.name" />
+                }
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label nzFor="directorIds">Đạo diễn</nz-form-label>
+            <nz-form-control>
+              <nz-select
+                id="directorIds"
+                nzMode="multiple"
+                nzShowSearch
+                nzServerSearch
+                formControlName="directorIds"
+                nzPlaceHolder="Gõ tên để tìm"
+                (nzOnSearch)="searchPeople($event)"
+              >
+                @for (p of peopleOptions(); track p.id) {
+                  <nz-option [nzValue]="p.id" [nzLabel]="p.fullName" />
+                }
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label nzFor="actorIds">Diễn viên (theo thứ tự hiển thị)</nz-form-label>
+            <nz-form-control>
+              <nz-select
+                id="actorIds"
+                nzMode="multiple"
+                nzShowSearch
+                nzServerSearch
+                formControlName="actorIds"
+                nzPlaceHolder="Gõ tên để tìm"
+                (nzOnSearch)="searchPeople($event)"
+              >
+                @for (p of peopleOptions(); track p.id) {
+                  <nz-option [nzValue]="p.id" [nzLabel]="p.fullName" />
+                }
+              </nz-select>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <div nz-col [nzXs]="24" [nzLg]="8">
+          <adm-movie-poster [url]="form.controls.posterUrl.value || null" [title]="form.controls.title.value || '?'" [width]="160" />
+          <nz-form-item>
+            <nz-form-label nzFor="posterUrl">Poster (URL)</nz-form-label>
+            <nz-form-control>
+              <input nz-input id="posterUrl" formControlName="posterUrl" placeholder="https://..." />
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label nzFor="bannerUrl">Banner (URL)</nz-form-label>
+            <nz-form-control>
+              <input nz-input id="bannerUrl" formControlName="bannerUrl" placeholder="https://..." />
+            </nz-form-control>
+          </nz-form-item>
+          <nz-form-item>
+            <nz-form-label nzFor="trailerUrl">Trailer (YouTube URL)</nz-form-label>
+            <nz-form-control>
+              <input nz-input id="trailerUrl" formControlName="trailerUrl" placeholder="https://www.youtube.com/watch?v=..." />
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button nz-button nzType="primary" type="submit" [nzLoading]="store.saving()">Lưu</button>
+        <a nz-button routerLink="/movies">Hủy</a>
+      </div>
+    </form>
+  }
+</nz-card>

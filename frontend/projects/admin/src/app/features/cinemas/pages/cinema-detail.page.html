@@ -1,0 +1,115 @@
+@if (store.cinema(); as cinema) {
+  <nz-card [nzTitle]="cinema.name" [nzExtra]="cinemaExtra">
+    <nz-descriptions nzSize="small" [nzColumn]="{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }">
+      <nz-descriptions-item nzTitle="Địa chỉ">{{ cinema.address }}, {{ cinema.city }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Điện thoại">{{ cinema.phone ?? '—' }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Trạng thái">{{ statusLabels[cinema.status] }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="Tiện ích">
+        @for (a of cinema.amenities; track a) {
+          <nz-tag>{{ a }}</nz-tag>
+        } @empty {
+          —
+        }
+      </nz-descriptions-item>
+    </nz-descriptions>
+  </nz-card>
+  <ng-template #cinemaExtra>
+    <a nz-button routerLink="/cinemas">← Danh sách rạp</a>
+    <button nz-button (click)="editingCinema.set(true)" style="margin-left: 8px">Sửa rạp</button>
+  </ng-template>
+  <adm-cinema-form-modal
+    [cinema]="editingCinema() ? cinema : undefined"
+    [saving]="store.saving()"
+    (closed)="editingCinema.set(false)"
+    (saved)="saveCinema($event)"
+  />
+}
+
+<nz-card nzTitle="Phòng chiếu" [nzExtra]="roomExtra">
+  <nz-table #table nzSize="middle" [nzData]="store.rooms()" [nzLoading]="store.loading()" [nzScroll]="{ x: '760px' }">
+    <thead>
+      <tr>
+        <th>Phòng</th>
+        <th>Loại</th>
+        <th>Ghế / chỗ ngồi</th>
+        <th>Sơ đồ</th>
+        <th>Trạng thái</th>
+        <th nzWidth="190px">Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of table.data; track r.id) {
+        <tr>
+          <td>{{ r.name }}</td>
+          <td>{{ roomTypeLabels[r.roomType] }}</td>
+          <td>
+            @if (r.seatCount) {
+              {{ r.seatCount }} ghế / {{ r.capacity }} chỗ
+            } @else {
+              <span class="muted">Chưa có sơ đồ</span>
+            }
+          </td>
+          <td>
+            @if (r.layoutLocked) {
+              <nz-tag nzColor="orange">Đã khóa (có suất chiếu)</nz-tag>
+            } @else {
+              <nz-tag>Có thể sửa</nz-tag>
+            }
+          </td>
+          <td>
+            <nz-tag [nzColor]="r.status === 'ACTIVE' ? 'success' : 'default'">{{ statusLabels[r.status] }}</nz-tag>
+          </td>
+          <td class="actions">
+            <a nz-button nzSize="small" nzType="primary" [routerLink]="['rooms', r.id]">Sơ đồ ghế</a>
+            <button nz-button nzSize="small" (click)="openRoom(r)">Sửa</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+</nz-card>
+<ng-template #roomExtra>
+  <button nz-button nzType="primary" (click)="openRoom(null)">Thêm phòng</button>
+</ng-template>
+
+<nz-modal
+  [nzVisible]="editingRoom() !== undefined"
+  [nzTitle]="editingRoom() ? 'Sửa phòng' : 'Thêm phòng'"
+  nzOkText="Lưu"
+  nzCancelText="Hủy"
+  [nzOkLoading]="store.saving()"
+  [nzOkDisabled]="!roomName.trim()"
+  (nzOnCancel)="editingRoom.set(undefined)"
+  (nzOnOk)="saveRoom()"
+>
+  <ng-container *nzModalContent>
+    <form nz-form nzLayout="vertical">
+      <nz-form-item>
+        <nz-form-label nzFor="roomName" nzRequired>Tên phòng</nz-form-label>
+        <nz-form-control>
+          <input nz-input id="roomName" name="roomName" [(ngModel)]="roomName" />
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-label nzFor="roomType">Loại phòng</nz-form-label>
+        <nz-form-control>
+          <nz-select id="roomType" name="roomType" [(ngModel)]="roomType">
+            @for (o of roomTypeOptions; track o.value) {
+              <nz-option [nzValue]="o.value" [nzLabel]="o.label" />
+            }
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-label nzFor="roomStatus">Trạng thái</nz-form-label>
+        <nz-form-control>
+          <nz-select id="roomStatus" name="roomStatus" [(ngModel)]="roomStatus">
+            @for (o of statusOptions; track o.value) {
+              <nz-option [nzValue]="o.value" [nzLabel]="o.label" />
+            }
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  </ng-container>
+</nz-modal>

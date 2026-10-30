@@ -1,0 +1,8 @@
+# Lưu LF trong repo cho mọi file văn bản; script Windows giữ CRLF
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+*.jar binary
+*.png binary
+*.ico binary

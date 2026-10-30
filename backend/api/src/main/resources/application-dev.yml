@@ -1,0 +1,27 @@
+# Profile dev: kết nối tới các dịch vụ trong docker-compose.yml ở thư mục gốc.
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:moviebooking}
+    username: ${DB_USERNAME:moviebooking}
+    password: ${DB_PASSWORD:moviebooking}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+management:
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.moviebooking: DEBUG
+
+app:
+  security:
+    jwt:
+      # Khóa chỉ dùng cho dev; có thể ghi đè bằng biến JWT_SECRET
+      secret: ${JWT_SECRET:ZGV2LW9ubHktc2VjcmV0LWtleS1mb3Itand0LXNpZ25pbmctbW92aWUtYm9va2luZy1sb2NhbA==}
+    # Dev chạy HTTP nên cookie không đặt cờ Secure
+    refresh-cookie-secure: false

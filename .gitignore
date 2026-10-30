@@ -1,0 +1,26 @@
+# Môi trường
+.env
+
+# Cấu hình cục bộ của Claude Code (đường dẫn riêng từng máy)
+.claude/
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# Backend (Maven)
+backend/**/target/
+backend/.dev-postgres/
+!backend/.mvn/wrapper/maven-wrapper.jar
+
+# Frontend (Angular) — xem thêm frontend/.gitignore
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Kết quả kiểm thử tải
+tools/k6/results/

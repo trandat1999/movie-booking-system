@@ -1,0 +1,88 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.select {
+  width: 200px;
+}
+
+.select-sm {
+  width: 140px;
+}
+
+.time,
+.title {
+  font-weight: 500;
+}
+
+.muted {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.seats {
+  min-width: 140px;
+}
+
+.actions > * + * {
+  margin-left: 8px;
+}
+
+.alert {
+  margin-bottom: 16px;
+}
+
+.conflicts {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 16px;
+}
+
+.span-2 {
+  grid-column: span 2;
+}
+
+.full {
+  width: 100%;
+}
+
+.quote {
+  padding: 12px;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.prices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  nz-input-number {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .form {
+    grid-template-columns: 1fr;
+  }
+
+  .span-2 {
+    grid-column: auto;
+  }
+}

@@ -1,0 +1,21 @@
+# Profile test: datasource do PostgreSQL nhúng (Zonky) cung cấp — xem AbstractIntegrationTest.
+spring:
+  main:
+    banner-mode: off
+
+management:
+  health:
+    # Redis chưa được dùng trong test tích hợp; tránh health DOWN khi máy không chạy Redis.
+    redis:
+      enabled: false
+
+app:
+  security:
+    jwt:
+      # Khóa chỉ dùng cho test
+      secret: dGVzdC1vbmx5LXNlY3JldC1rZXktZm9yLWp3dC1zaWduaW5nLW1vdmllLWJvb2tpbmctMjAyNg==
+    refresh-cookie-secure: false
+
+logging:
+  level:
+    com.moviebooking: INFO

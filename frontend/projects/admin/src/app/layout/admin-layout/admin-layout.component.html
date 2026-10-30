@@ -1,0 +1,41 @@
+<nz-layout class="layout">
+  <nz-sider nzCollapsible [nzCollapsed]="collapsed()" [nzTrigger]="null" nzWidth="232px" nzBreakpoint="lg"
+            (nzCollapsedChange)="collapsed.set($event)">
+    <div class="logo">{{ collapsed() ? 'MB' : 'MovieBooking Admin' }}</div>
+    <ul nz-menu nzTheme="dark" nzMode="inline" [nzInlineCollapsed]="collapsed()">
+      @for (item of menu(); track item.link) {
+        <li nz-menu-item nzMatchRouter>
+          <nz-icon [nzType]="item.icon" />
+          <span><a [routerLink]="item.link">{{ item.label }}</a></span>
+        </li>
+      }
+    </ul>
+  </nz-sider>
+
+  <nz-layout>
+    <nz-header class="header">
+      <button type="button" class="trigger" [attr.aria-label]="collapsed() ? 'Mở menu' : 'Thu gọn menu'"
+              (click)="toggle()">
+        <nz-icon [nzType]="collapsed() ? 'menu-unfold' : 'menu-fold'" />
+      </button>
+
+      @if (auth.user(); as user) {
+        <a nz-dropdown [nzDropdownMenu]="accountMenu" nzPlacement="bottomRight" class="account">
+          <nz-icon nzType="user" />
+          <span>{{ user.fullName }}</span>
+          <nz-icon nzType="down" />
+        </a>
+        <nz-dropdown-menu #accountMenu="nzDropdownMenu">
+          <ul nz-menu>
+            <li nz-menu-item nzDisabled>{{ user.email }}</li>
+            <li nz-menu-divider></li>
+            <li nz-menu-item tabindex="0" (click)="logout()" (keyup.enter)="logout()"><nz-icon nzType="logout" /> Đăng xuất</li>
+          </ul>
+        </nz-dropdown-menu>
+      }
+    </nz-header>
+    <nz-content class="content">
+      <router-outlet />
+    </nz-content>
+  </nz-layout>
+</nz-layout>

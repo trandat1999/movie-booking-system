@@ -1,0 +1,106 @@
+<nz-card nzTitle="Người dùng">
+  <div class="filters">
+    <nz-input-group nzPrefixIcon="search" class="keyword">
+      <input
+        nz-input
+        placeholder="Email, họ tên hoặc số điện thoại"
+        [(ngModel)]="keyword"
+        (keyup.enter)="search()"
+        aria-label="Từ khóa"
+      />
+    </nz-input-group>
+    <nz-select [(ngModel)]="status" nzAllowClear nzPlaceHolder="Trạng thái" class="select" aria-label="Trạng thái">
+      <nz-option nzValue="ACTIVE" nzLabel="Hoạt động" />
+      <nz-option nzValue="LOCKED" nzLabel="Đã khóa" />
+    </nz-select>
+    <nz-select [(ngModel)]="role" nzAllowClear nzPlaceHolder="Vai trò" class="select" aria-label="Vai trò">
+      @for (r of store.roles(); track r.code) {
+        <nz-option [nzValue]="r.code" [nzLabel]="r.name" />
+      }
+    </nz-select>
+    <button nz-button nzType="primary" (click)="search()">Tìm kiếm</button>
+  </div>
+
+  <nz-table
+    #table
+    nzSize="middle"
+    [nzData]="store.users()"
+    [nzLoading]="store.loading()"
+    [nzFrontPagination]="false"
+    [nzTotal]="store.total()"
+    [nzPageIndex]="store.pageIndex()"
+    [nzPageSize]="store.query().size"
+    nzShowSizeChanger
+    [nzShowTotal]="totalTemplate"
+    [nzScroll]="{ x: '900px' }"
+    (nzPageIndexChange)="store.changePage($event, store.query().size)"
+    (nzPageSizeChange)="store.changePage(1, $event)"
+  >
+    <thead>
+      <tr>
+        <th>Người dùng</th>
+        <th>Số điện thoại</th>
+        <th>Vai trò</th>
+        <th>Trạng thái</th>
+        <th>Đăng nhập gần nhất</th>
+        <th>Ngày tạo</th>
+        @if (canWrite()) {
+          <th nzRight>Thao tác</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (user of table.data; track user.id) {
+        <tr>
+          <td>
+            <div class="name">{{ user.fullName }}</div>
+            <div class="email">{{ user.email }}</div>
+          </td>
+          <td>{{ user.phone ?? '—' }}</td>
+          <td>
+            @for (r of user.roles; track r.code) {
+              <nz-tag>{{ r.name }}</nz-tag>
+            }
+          </td>
+          <td><lib-user-status-tag [status]="user.status" /></td>
+          <td>{{ user.lastLoginAt ? (user.lastLoginAt | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+          <td>{{ user.createdAt | date: 'dd/MM/yyyy' }}</td>
+          @if (canWrite()) {
+            <td nzRight class="actions">
+              @if (user.id !== currentUserId()) {
+                <button nz-button nzSize="small" (click)="editingRolesOf.set(user)">Vai trò</button>
+                <button
+                  nz-button
+                  nzSize="small"
+                  [nzDanger]="user.status === 'ACTIVE'"
+                  [nzLoading]="store.updatingId() === user.id"
+                  nz-popconfirm
+                  [nzPopconfirmTitle]="
+                    user.status === 'ACTIVE'
+                      ? 'Khóa tài khoản này? Người dùng sẽ bị đăng xuất khỏi mọi thiết bị.'
+                      : 'Mở khóa tài khoản này?'
+                  "
+                  (nzOnConfirm)="toggleLock(user)"
+                >
+                  {{ user.status === 'ACTIVE' ? 'Khóa' : 'Mở khóa' }}
+                </button>
+              } @else {
+                <span class="self">Tài khoản của bạn</span>
+              }
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </nz-table>
+
+  <ng-template #totalTemplate let-total>Tổng {{ total }} người dùng</ng-template>
+</nz-card>
+
+<adm-user-roles-modal
+  [user]="editingRolesOf()"
+  [roles]="store.roles()"
+  [saving]="store.updatingId() !== null"
+  (closed)="editingRolesOf.set(null)"
+  (saved)="saveRoles($event)"
+/>
