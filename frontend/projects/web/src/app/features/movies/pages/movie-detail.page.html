@@ -52,6 +52,11 @@
       @if (movie.description) {
         <p class="description">{{ movie.description }}</p>
       }
+      @if (movie.status !== 'ENDED') {
+        <a nz-button nzType="primary" [routerLink]="['/groups/new']" [queryParams]="{ movieId: movie.id }">
+          Đặt vé theo nhóm
+        </a>
+      }
     </div>
   </section>
 

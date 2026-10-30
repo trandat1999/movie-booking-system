@@ -77,6 +77,24 @@ public enum ErrorCode {
     INVALID_PAYMENT_SIGNATURE(HttpStatus.BAD_REQUEST, "Chữ ký thanh toán không hợp lệ"),
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy thông báo"),
 
+    // Đặt vé theo nhóm (M6)
+    GROUP_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy nhóm"),
+    INVITE_CODE_INVALID(HttpStatus.NOT_FOUND, "Mã mời không đúng hoặc đã được tạo lại"),
+    NOT_GROUP_LEADER(HttpStatus.FORBIDDEN, "Chỉ trưởng nhóm được thực hiện thao tác này"),
+    GROUP_NOT_OPEN(HttpStatus.CONFLICT, "Nhóm đã chốt hoặc đã kết thúc, không thể thay đổi"),
+    GROUP_INVALID_STATUS(HttpStatus.CONFLICT, "Thao tác không phù hợp với trạng thái hiện tại của nhóm"),
+    GROUP_FULL(HttpStatus.CONFLICT, "Nhóm đã đủ số người tối đa"),
+    TOO_MANY_ACTIVE_GROUPS(HttpStatus.CONFLICT, "Bạn đang tham gia quá nhiều nhóm đang hoạt động"),
+    ALREADY_GROUP_MEMBER(HttpStatus.CONFLICT, "Bạn đã ở trong nhóm này"),
+    LEADER_CANNOT_LEAVE(HttpStatus.BAD_REQUEST, "Trưởng nhóm cần chuyển quyền trước khi rời nhóm"),
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy thành viên trong nhóm"),
+    INVALID_GROUP_DATES(HttpStatus.BAD_REQUEST, "Khoảng ngày hoặc hạn chốt không hợp lệ"),
+    SHOWTIME_NOT_ELIGIBLE(HttpStatus.BAD_REQUEST, "Suất chiếu phải cùng phim (và rạp) của nhóm và còn bán vé"),
+    OPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy suất chiếu được đề xuất"),
+    INVALID_TICKET_COUNT(HttpStatus.BAD_REQUEST, "Số vé không hợp lệ"),
+    SEAT_COUNT_MISMATCH(HttpStatus.BAD_REQUEST, "Số chỗ của các ghế đã chọn không khớp số vé của nhóm"),
+    INVALID_ASSIGNMENT(HttpStatus.BAD_REQUEST, "Phân phối vé không hợp lệ"),
+
     // Cấu hình (M2)
     SETTING_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy tham số cấu hình"),
     INVALID_SETTING_VALUE(HttpStatus.BAD_REQUEST, "Giá trị cấu hình không hợp lệ");

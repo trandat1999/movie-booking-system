@@ -10,6 +10,7 @@ import {
   MailOutline,
   PhoneOutline,
   QrcodeOutline,
+  TeamOutline,
   UserOutline,
 } from '@ant-design/icons-angular/icons';
 import { provideAppCore } from '@mb/shared';
@@ -30,6 +31,7 @@ export const appConfig: ApplicationConfig = {
       MailOutline,
       PhoneOutline,
       QrcodeOutline,
+      TeamOutline,
       UserOutline,
     ]),
   ],

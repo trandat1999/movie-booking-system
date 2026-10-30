@@ -24,10 +24,12 @@ export * from './lib/api/auth.api';
 export * from './lib/api/me.api';
 export * from './lib/api/booking.api';
 export * from './lib/api/notification.api';
+export * from './lib/api/group.api';
 
 // models
 export * from './lib/models/api-response.model';
 export * from './lib/models/booking.model';
+export * from './lib/models/group.model';
 export * from './lib/models/catalog.model';
 export * from './lib/models/labels';
 export * from './lib/models/public.model';
