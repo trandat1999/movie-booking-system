@@ -533,7 +533,7 @@ Backend là nguồn kết quả chính thức. Frontend chỉ hiển thị phư�
 - Lưới phòng: danh sách ghế `(id, gridRow, gridCol, colSpan, capacity, typeCode, price)`; ô không có ghế = lối đi.
 - Tập ghế khả dụng của suất chiếu.
 - `n`: số người cần chỗ ngồi.
-- Tùy chọn: `allowSplit`, `maxRows` (mặc định 2–3), `allowedSeatTypes`, `maxPricePerSeat`, `topK` (mặc định 5), trọng số `w`.
+- Tùy chọn: `allowSplit` (mặc định bật), `maxRows` (mặc định 3), `allowedSeatTypes`, `maxPricePerPerson` (ngân sách mỗi người — tiêu chí **mềm**: vượt thì trừ điểm, không loại), `topK` (mặc định 5), trọng số `w`.
 
 **Định nghĩa**
 - Hai ghế **liền kề ngang** khi cùng hàng và `colB = colA + colSpanA` (không có ô trống ở giữa).
@@ -543,7 +543,7 @@ Backend là nguồn kết quả chính thức. Frontend chỉ hiển thị phư�
 **Các bước**
 1. **Tìm đoạn**: duyệt từng hàng → danh sách đoạn. Độ phức tạp O(S) với S là số ghế.
 2. **Ứng viên một hàng**: trượt cửa sổ trên mỗi đoạn có tổng capacity ≥ n, lấy các cửa sổ có capacity đúng bằng n (cho phép n+1 nếu ghế đôi buộc phải thừa — trừ điểm).
-3. **Ứng viên nhiều hàng** (khi `allowSplit` hoặc bước 2 không đủ `topK`): với mỗi bộ k hàng **liên tiếp** (k = 2..maxRows), chia n thành k phần cân bằng (ví dụ 5 → 3+2), mỗi phần lấy một cửa sổ trong một đoạn của hàng tương ứng, yêu cầu các cửa sổ **chồng cột** với nhau. Cắt tỉa bằng beam search (giữ B = 50 ứng viên tốt nhất ở mỗi hàng) để tránh bùng nổ tổ hợp.
+3. **Ứng viên nhiều hàng** (khi `allowSplit`; luôn tính cùng ứng viên một hàng, điểm trừ theo số hàng quyết định thứ tự): với mỗi bộ k hàng **liên tiếp** (k = 2..maxRows), chia n thành k phần cân bằng (ví dụ 5 → 3+2, xét mọi hoán vị 3+2 / 2+3), mỗi phần lấy một cửa sổ trong một đoạn của hàng tương ứng, yêu cầu các cửa sổ **chồng cột** với nhau. Cắt tỉa bằng beam search (giữ B = 50 ứng viên tốt nhất ở mỗi hàng) để tránh bùng nổ tổ hợp.
 4. **Chấm điểm** (điểm càng cao càng tốt, các thành phần chuẩn hóa về [0, 1]):
 
 ```
@@ -556,15 +556,16 @@ score = 100
       − w_waste  · wastedSeats     // chỗ thừa do ghế đôi
 ```
 
-   Trọng số mặc định lưu trong `system_settings.seat_weights`, admin chỉnh được.
+   Chuẩn hóa (đã cài đặt ở M5): `d_center` = khoảng cách Euclid chuẩn hóa theo nửa bề ngang và chiều sâu; `rows` = (số hàng − 1)/2; `misalign` = 1 − (phần giao cột / bề rộng cửa sổ hẹp hơn) trung bình giữa hai hàng kề; `orphans` = số ghế lẻ/2; `waste` = chỗ thừa/2 (mỗi thành phần tối đa 1). Trọng số mặc định sau thực nghiệm: center 30, rows 30, align 10, orphan 15, price 5, waste 10 (tổng 100 → điểm trong [0, 100]). Từ M6 lưu trong `system_settings.seat_weights`, admin chỉnh được.
+   `SeatSuggester.evaluate` chấm điểm một tập ghế bất kỳ bằng cùng hàm điểm — dùng khi trưởng nhóm chỉnh ghế thủ công (GRP13) và để so sánh baseline.
 5. **Chọn top-K đa dạng**: sắp xếp theo điểm, loại phương án trùng > 50% ghế với phương án đã chọn, trả về K phương án kèm **giải thích** (ví dụ "Cùng hàng E, gần trung tâm, 0 ghế lẻ").
-6. **Không có phương án**: trả về `reason` (không đủ ghế trống / không đủ ghế gần nhau) + gợi ý suất chiếu khác cùng ngày còn cụm phù hợp.
+6. **Không có phương án**: trả về `reason` (`NOT_ENOUGH_SEATS` / `NO_CLUSTER`) + gợi ý suất chiếu khác cùng ngày còn cụm phù hợp (gợi ý suất khác làm ở tầng API, M6).
 
 **Thực nghiệm (module `backend/seat-bench`, đo thời gian bằng JMH)**
 - Sinh ngẫu nhiên phòng 100 / 200 / 300 ghế, tỷ lệ lấp đầy 30 / 60 / 85 %, kiểu lấp đầy ngẫu nhiên và kiểu tập trung ở giữa, n = 2..10.
 - So sánh với 2 baseline: **tham lam trái → phải** và **chọn n ghế trống bất kỳ gần trung tâm nhất**.
 - Chỉ số: tỷ lệ tìm được cụm cùng hàng, điểm trung bình, số ghế lẻ tạo ra, thời gian chạy (p50/p95).
-- Xuất bảng CSV + biểu đồ cho báo cáo.
+- Xuất bảng CSV + biểu đồ cho báo cáo. Kết quả M5: `docs/experiments/README.md`.
 
 ### 8.3 Thời gian thực (Spring WebSocket + STOMP)
 
@@ -714,7 +715,7 @@ Mỗi giai đoạn kết thúc bằng: code chạy được, test xanh, cập nh
 - [x] Component sơ đồ ghế `lib-seat-grid` trong `projects/shared` (render theo grid bằng CSS Grid, chú thích loại ghế, phóng to/thu nhỏ trên mobile)
 - **Xong khi**: người dùng đi từ trang chủ tới sơ đồ ghế của một suất chiếu.
 
-### M4 — Đặt vé cá nhân (end-to-end với Mock payment)
+### M4 — Đặt vé cá nhân (end-to-end với Mock payment) ✅
 - [x] API hold theo mục 8.1 + BR13/BR14/BR15; job giải phóng ghế hết hạn
 - [x] WebSocket STOMP (`/ws`) + topic `/topic/showtimes/{id}/seats`; `StompService` ở frontend; sơ đồ ghế cập nhật realtime
 - [x] Tạo đơn, tính tiền, MockProvider, xác nhận idempotent, tạo vé + QR
@@ -723,10 +724,10 @@ Mỗi giai đoạn kết thúc bằng: code chạy được, test xanh, cập nh
 - [x] Test tích hợp: 2 người giữ cùng ghế; callback thanh toán 2 lần; thanh toán sau khi hết hạn
 - **Xong khi**: mở 2 trình duyệt, chọn ghế ở bên này thì bên kia thấy ngay; không thể bán trùng.
 
-### M5 — Thuật toán cụm ghế
-- [ ] Module `seat-engine`: tìm đoạn, ứng viên một hàng, nhiều hàng (beam search), chấm điểm, top-K đa dạng, giải thích
-- [ ] Unit test các ca: lối đi, ghế đôi, ghế lẻ, phòng gần đầy, n lớn hơn mọi hàng, không có phương án
-- [ ] Module `seat-bench`: bộ sinh phòng/tỷ lệ lấp đầy, 2 baseline, JMH; xuất CSV vào `docs/experiments/`
+### M5 — Thuật toán cụm ghế ✅
+- [x] Module `seat-engine`: tìm đoạn, ứng viên một hàng, nhiều hàng (beam search), chấm điểm, top-K đa dạng, giải thích
+- [x] Unit test các ca: lối đi, ghế đôi, ghế lẻ, phòng gần đầy, n lớn hơn mọi hàng, không có phương án
+- [x] Module `seat-bench`: bộ sinh phòng/tỷ lệ lấp đầy, 2 baseline, JMH; xuất CSV vào `docs/experiments/`
 - **Xong khi**: phòng 300 ghế, n ≤ 10, p95 < 50 ms; tất cả test xanh.
 
 ### M6 — Đặt vé theo nhóm (Mô hình A)
@@ -800,3 +801,4 @@ Mỗi giai đoạn kết thúc bằng: code chạy được, test xanh, cập nh
 | 2026-10-30 | M2 | Module movie (thể loại, đạo diễn/diễn viên, phim; slug tiếng Việt), cinema (rạp, phòng, sơ đồ ghế dạng lưới có lối đi/ghế đôi/ghế khuyết tật, nhãn hàng/số ghế do backend tính, khóa sơ đồ khi có suất chiếu, bật/tắt bán ghế), showtime (giá = cơ bản × số chỗ + phụ thu, chốt giá theo suất, ngày lễ, chống trùng lịch 3 lớp kèm EXCLUDE constraint), setting (13 tham số có kiểm tra giá trị). Admin UI: phim, rạp/phòng, trình thiết kế sơ đồ, lịch chiếu (xem trước giá, báo suất trùng), giá vé & ngày lễ, cấu hình. Seeder dev: 15 phim, 3 rạp, 8 phòng, ~340 suất. Backend 74 test, frontend 18 unit test. | Đổi so với thiết kế ban đầu: bảng `price_rules` thay bằng `ticket_base_prices` + `seat_types.surcharge` + `showtime_prices` (mục 8.6). Chưa có API công khai cho khách (M3). Hủy suất chiếu đã có vé + hoàn tiền: M7. |
 | 2026-10-30 | M3 | API công khai (không cần đăng nhập): phim đang/sắp chiếu + lọc thể loại/độ tuổi/ngôn ngữ, chi tiết theo slug, rạp đang hoạt động, suất chiếu còn bán vé theo ngày (giờ VN, áp dụng `sale_close_after_start_min`), chi tiết suất + giá, sơ đồ ghế với trạng thái hiệu lực. Web: trang chủ (banner trượt + đang chiếu/sắp chiếu), danh sách phim, chi tiết phim (trailer YouTube đã kiểm tra URL, lịch chiếu 7 ngày nhóm theo rạp → định dạng), danh sách/chi tiết rạp (lịch chiếu nhóm theo phim), trang suất chiếu (cảnh báo độ tuổi, chú thích giá, sơ đồ ghế). Backend 80 test, frontend 24 unit test. | Sửa lỗi phát hiện khi chạy thử: đạo diễn/diễn viên bị nhân đôi theo số thể loại (fetch join List + Set) → `Movie.credits` đổi sang Set có thứ tự, thêm test hồi quy; carousel NG-ZORRO tính sai chiều cao → thay bằng slider CSS scroll-snap; menu đầu trang tràn trên mobile. Lọc phim theo định dạng chiếu (MOV04) chuyển sang lọc suất chiếu (SCH04) để tránh phụ thuộc vòng movie ↔ showtime. Chọn/giữ ghế: M4. |
 | 2026-10-30 | M4 | Module booking: giữ ghế nguyên tử (UPDATE có điều kiện, khóa dòng theo thứ tự `seat_id` chống deadlock; giữ đủ hoặc không giữ ghế nào), quy tắc ghế lẻ block/warn/off, giới hạn số ghế/lượt giữ, chọn lại thay lượt giữ cũ, rate limit giữ ghế + đăng nhập (Bucket4j). Đơn hàng idempotent theo lượt giữ, giá chụp lại, lịch sử `order_events`, chống IDOR. Module payment: `PaymentProvider` + cổng giả lập ký HMAC, IPN idempotent (`ON CONFLICT DO NOTHING` theo mã giao dịch), thanh toán thất bại được thử lại, tiền về sau hết hạn → nhận lại ghế hoặc REFUND_PENDING (BR17). Vé + QR ký HMAC. Module notification: thông báo in-app + đẩy `/user/queue/notifications`, email Thymeleaf `@Async` sau commit. Job dọn lượt giữ hết hạn (ShedLock). STOMP `/ws` + `/topic/showtimes/{id}/seats`. Web: chọn ghế realtime + thanh đặt vé, trang thanh toán có đếm ngược theo giờ máy chủ, cổng giả lập (thành công/thất bại/gửi 2 lần), kết quả đơn + vé QR, Vé của tôi, Lịch sử đơn, chuông thông báo realtime. Backend 96 test (10 test đặt vé, gồm 8 luồng tranh cùng ghế → đúng 1 thành công). | Kiểm tra thủ công trên trình duyệt: tài khoản thứ hai (gọi API) giữ ghế đang được chọn → trang bên kia thấy ghế chuyển "đang giữ" và tự bỏ chọn; luồng chọn ghế → thanh toán giả lập → vé QR; callback lặp bị bỏ qua; thông báo realtime. Pane trình duyệt chỉ mở được 1 tab nên "trình duyệt thứ hai" là client API. Sửa lỗi phát hiện khi chạy thử: trang thanh toán thiếu provider `NzModalService`. Email ở dev chỉ ghi log (`MAIL_ENABLED=false`). |
+| 2026-10-30 | M5 | `seat-engine` (Java thuần): `SeatSuggester.suggest` — tìm đoạn, cửa sổ tối thiểu một hàng (ghế đôi không tách, thừa chỗ bị trừ điểm), nhiều hàng liên tiếp chồng cột bằng beam search B=50 với mọi hoán vị chia cân bằng, hàm điểm 6 thành phần chuẩn hóa, top-K đa dạng (trùng ≤ 50 %), giải thích tiếng Việt, lý do `NOT_ENOUGH_SEATS`/`NO_CLUSTER`; `SeatSuggester.evaluate` chấm tập ghế bất kỳ (cho GRP13). 23 unit test, coverage 98 % lệnh / 92 % nhánh. `seat-bench`: bộ sinh phòng 100/200/300 ghế × lấp đầy 30/60/85 % × kiểu RANDOM/CENTER, 2 baseline (tham lam trái→phải, gần trung tâm nhất), thực nghiệm 16 200 phòng xuất CSV + biểu đồ SVG, JMH. Phòng 300 ghế: p95 lớn nhất 3,1 ms (mục tiêu < 50 ms). | Trên cùng tập phòng, điểm engine cao hơn baseline tốt nhất 8–19 điểm; ghế lẻ ít hơn greedy 11–87 %. Lần chạy đầu tỷ lệ cùng hàng thấp hơn greedy 3–5 điểm % → tăng trọng số "chia hàng" 20→30 (mặc định mới 30/30/10/15/5/10), sau đó ngang greedy. Ngân sách là tiêu chí mềm. Trọng số đang là hằng số trong code; đưa vào `system_settings.seat_weights` và tích hợp API ở M6. Maven offline không có dependency plugin → chạy bench bằng classpath tự dựng (xem `docs/experiments/README.md`). |
