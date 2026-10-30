@@ -25,6 +25,7 @@ export * from './lib/api/me.api';
 export * from './lib/api/booking.api';
 export * from './lib/api/notification.api';
 export * from './lib/api/group.api';
+export * from './lib/api/admin-booking.api';
 
 // models
 export * from './lib/models/api-response.model';

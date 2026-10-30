@@ -54,7 +54,19 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/settings.page').then((m) => m.SettingsPage),
         title: 'Cấu hình hệ thống — MovieBooking Admin',
       },
-      // M4+: orders, groups, checkin, promotions, audit
+      {
+        path: 'checkin',
+        canActivate: [permissionGuard(Permissions.TICKET_CHECKIN, '/dashboard')],
+        loadComponent: () => import('./features/checkin/checkin.page').then((m) => m.CheckinPage),
+        title: 'Soát vé — MovieBooking Admin',
+      },
+      {
+        path: 'refunds',
+        canActivate: [permissionGuard(Permissions.ORDER_REFUND, '/dashboard')],
+        loadComponent: () => import('./features/refunds/refunds.page').then((m) => m.RefundsPage),
+        title: 'Hoàn tiền — MovieBooking Admin',
+      },
+      // M8: orders, groups, promotions, audit
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

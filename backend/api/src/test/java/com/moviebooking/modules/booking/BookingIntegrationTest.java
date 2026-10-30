@@ -273,7 +273,7 @@ class BookingIntegrationTest extends AbstractAdminIntegrationTest {
     }
 
     @Test
-    void latePaymentForSeatsTakenByOthersBecomesRefundPending() throws Exception {
+    void latePaymentForSeatsTakenByOthersIsRefunded() throws Exception {
         Fixture f = bookableShowtime();
         long holdId = longAt(hold(alice, f, "A1", "A2").andReturn(), "$.data.id");
         String code = createOrder(alice, holdId);
@@ -283,10 +283,12 @@ class BookingIntegrationTest extends AbstractAdminIntegrationTest {
         // Chưa có job dọn: ghế giữ quá hạn vẫn được coi là trống với người khác
         hold(bob, f, "A1", "A2").andExpect(status().isOk());
 
-        ipn(gateway, true).andExpect(jsonPath("$.data.orderStatus").value("REFUND_PENDING"));
+        ipn(gateway, true).andExpect(jsonPath("$.data.orderStatus").value("REFUNDED"));
         assertThat(seatStatus(f, "A1")).isEqualTo("HELD");
         perform(alice, get("/api/v1/orders/{code}", code))
-                .andExpect(jsonPath("$.data.status").value("REFUND_PENDING"))
+                .andExpect(jsonPath("$.data.status").value("REFUNDED"))
+                .andExpect(jsonPath("$.data.refund.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.data.refund.amount").value(2 * f.standardPrice()))
                 .andExpect(jsonPath("$.data.tickets.length()").value(0));
     }
 

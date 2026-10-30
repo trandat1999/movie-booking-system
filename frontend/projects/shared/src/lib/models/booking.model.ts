@@ -69,7 +69,43 @@ export interface Order {
   cancelledAt: string | null;
   createdAt: string;
   tickets: TicketInfo[];
+  /** Khác null nếu là đơn của nhóm (chỉ hủy từ trang nhóm) */
+  groupId: number | null;
+  /** Hạn tự hủy vé; null = không tự hủy được */
+  cancellableUntil: string | null;
+  /** QR của cả đơn (soát vé cả nhóm một lần) */
+  qrImage: string | null;
+  refund: { amount: number; status: RefundStatus; processedAt: string | null } | null;
   serverTime: string;
+}
+
+export type RefundStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
+
+export interface PaymentProviderInfo {
+  code: string;
+  name: string;
+}
+
+/** Yêu cầu hoàn tiền (trang quản trị) */
+export interface AdminRefund {
+  id: number;
+  orderCode: string;
+  userId: number;
+  orderTotal: number;
+  amount: number;
+  reason: string;
+  status: RefundStatus;
+  provider: string | null;
+  note: string | null;
+  createdAt: string;
+  processedAt: string | null;
+}
+
+export interface CheckinResult {
+  orderCode: string;
+  showtime: BookingShowtimeInfo;
+  checkedIn: number;
+  tickets: { code: string; seatLabel: string; holderName: string | null; status: TicketStatus; checkedInAt: string | null }[];
 }
 
 export interface OrderSummary {

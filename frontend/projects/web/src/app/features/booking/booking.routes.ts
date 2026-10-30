@@ -19,6 +19,12 @@ export const BOOKING_ROUTES: Routes = [
     title: 'Đơn hàng — MovieBooking',
   },
   {
+    path: 'payment/vnpay-return',
+    providers: [OrderStore],
+    loadComponent: () => import('./pages/vnpay-return.page').then((m) => m.VnpayReturnPage),
+    title: 'Kết quả thanh toán VNPay',
+  },
+  {
     // Cổng giả lập không cần đăng nhập — cổng thật cũng không biết phiên của người dùng
     path: 'payment/mock',
     providers: [OrderStore],

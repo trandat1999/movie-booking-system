@@ -268,6 +268,17 @@ export class GroupDetailPage {
     });
   }
 
+  protected cancelBooked(): void {
+    this.modal.confirm({
+      nzTitle: 'Hủy đặt vé của cả nhóm?',
+      nzContent: 'Vé của mọi thành viên bị hủy, ghế mở bán lại; tiền hoàn theo chính sách. Không hủy được một phần.',
+      nzOkText: 'Hủy đặt vé',
+      nzOkDanger: true,
+      nzCancelText: 'Không',
+      nzOnOk: () => this.store.cancel().subscribe(),
+    });
+  }
+
   protected leave(): void {
     this.modal.confirm({
       nzTitle: 'Rời nhóm?',

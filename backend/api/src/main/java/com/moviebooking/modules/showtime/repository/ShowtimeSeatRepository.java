@@ -71,6 +71,19 @@ public class ShowtimeSeatRepository {
                 Long.class);
     }
 
+    /** Trả các ghế đã bán của đơn về trống (hủy vé, BR10). */
+    public List<Long> releaseSold(Long showtimeId, Long orderId) {
+        return jdbc.queryForList(
+                """
+                UPDATE showtime_seats
+                SET status = 'AVAILABLE', hold_id = NULL, held_until = NULL, order_id = NULL, version = version + 1
+                WHERE showtime_id = :showtimeId AND order_id = :orderId AND status = 'SOLD'
+                RETURNING seat_id
+                """,
+                new MapSqlParameterSource().addValue("showtimeId", showtimeId).addValue("orderId", orderId),
+                Long.class);
+    }
+
     /** Ghế đang thuộc lượt giữ (kể cả đã quá hạn nhưng chưa bị người khác lấy). */
     public List<Long> seatIdsOfHold(Long holdId) {
         return jdbc.queryForList(

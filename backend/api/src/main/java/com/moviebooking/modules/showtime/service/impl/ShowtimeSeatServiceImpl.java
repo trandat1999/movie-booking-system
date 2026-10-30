@@ -116,6 +116,14 @@ public class ShowtimeSeatServiceImpl implements ShowtimeSeatService {
     }
 
     @Override
+    @Transactional
+    public List<Long> releaseSold(Long showtimeId, Long orderId) {
+        List<Long> released = showtimeSeatRepository.releaseSold(showtimeId, orderId);
+        publish(showtimeId, released, ShowtimeSeatStatus.AVAILABLE);
+        return released;
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<Long> seatIdsOfHold(Long holdId) {
         return showtimeSeatRepository.seatIdsOfHold(holdId);

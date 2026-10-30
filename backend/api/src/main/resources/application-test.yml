@@ -20,6 +20,9 @@ app:
   payment:
     mock:
       secret: test-mock-payment-secret
+    vnpay:
+      tmn-code: TESTTMN1
+      hash-secret: test-vnpay-secret
   # Test gọi đăng nhập/giữ ghế rất nhiều lần từ cùng IP
   rate-limit:
     login-per-minute: 100000
@@ -27,6 +30,7 @@ app:
   booking:
     # Test gọi HoldService.expire trực tiếp với đồng hồ giả, không chạy job nền
     expiry-job-enabled: false
+    completion-job-enabled: false
   group:
     deadline-job-enabled: false
 

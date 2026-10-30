@@ -26,6 +26,10 @@ public interface SeatHoldRepository extends JpaRepository<SeatHold, Long> {
             + "and h.status = com.moviebooking.modules.booking.enums.HoldStatus.ACTIVE and h.expiresAt > :now")
     long countActive(@Param("userId") Long userId, @Param("now") Instant now);
 
+    @Query("select h.id from SeatHold h where h.showtimeId = :showtimeId "
+            + "and h.status = com.moviebooking.modules.booking.enums.HoldStatus.ACTIVE")
+    List<Long> findActiveIdsByShowtime(@Param("showtimeId") Long showtimeId);
+
     /** Lượt giữ đã quá hạn nhưng chưa được dọn — cho job giải phóng ghế. */
     @Query("select h.id from SeatHold h where h.status = com.moviebooking.modules.booking.enums.HoldStatus.ACTIVE "
             + "and h.expiresAt < :now order by h.expiresAt")

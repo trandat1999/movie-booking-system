@@ -41,7 +41,24 @@ public class MockPaymentProvider implements PaymentProvider {
     }
 
     @Override
-    public PaymentSession createPayment(String orderCode, long amount, String description) {
+    public String displayName() {
+        return "Cổng thanh toán giả lập (demo)";
+    }
+
+    @Override
+    public boolean supportsAutoRefund() {
+        return true;
+    }
+
+    @Override
+    public String refund(String transactionId, long amount, String reason) {
+        byte[] random = new byte[6];
+        RANDOM.nextBytes(random);
+        return "MOCKRF" + HexFormat.of().formatHex(random).toUpperCase();
+    }
+
+    @Override
+    public PaymentSession createPayment(String orderCode, long amount, String description, String clientIp) {
         byte[] random = new byte[6];
         RANDOM.nextBytes(random);
         String txnId = "MOCK" + HexFormat.of().formatHex(random).toUpperCase();

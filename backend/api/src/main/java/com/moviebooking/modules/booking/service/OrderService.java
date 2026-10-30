@@ -25,6 +25,22 @@ public interface OrderService {
     /** @param past true = vé các suất đã chiếu xong */
     List<MyTicketResponse> myTickets(Long userId, boolean past);
 
+    /** Trưởng nhóm hủy đơn nhóm đã thanh toán theo chính sách (GRP21). */
+    void cancelGroupOrder(Long orderId, Long actorId);
+
+    /** Rạp hủy suất (SCHADM03): hủy mọi đơn, hoàn 100 %, trả ghế đang giữ. @return số đơn đã hủy */
+    int cancelForShowtime(Long showtimeId, Long actorId);
+
+    /** Admin xác nhận đã hoàn tiền thủ công → đơn REFUNDED (ORDADM-R). */
+    com.moviebooking.modules.payment.dto.response.RefundView completeRefund(Long refundId, Long actorId, String note);
+
+    /** Đơn đã thanh toán của suất đã chiếu xong → COMPLETED. @return số đơn */
+    int completeFinishedOrders();
+
+    /** Yêu cầu hoàn tiền cho trang quản trị; {@code status} null = tất cả. */
+    com.moviebooking.common.response.PageResponse<com.moviebooking.modules.booking.dto.response.AdminRefundView> listRefunds(
+            com.moviebooking.modules.payment.enums.RefundStatus status, int page, int size);
+
     // --- Dùng cho module nhóm ---
 
     Long findIdByCode(String code);

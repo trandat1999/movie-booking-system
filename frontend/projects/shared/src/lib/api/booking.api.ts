@@ -10,6 +10,7 @@ import {
   Order,
   OrderSummary,
   PaymentCallbackResult,
+  PaymentProviderInfo,
   PaymentSession,
 } from '../models/booking.model';
 
@@ -46,6 +47,15 @@ export class BookingApi {
   /** Trang cổng giả lập gửi IPN về backend (không cần đăng nhập, xác thực bằng chữ ký). */
   sendMockIpn(params: Record<string, string>): Observable<PaymentCallbackResult> {
     return this.api.post<PaymentCallbackResult>('/payments/MOCK/ipn', params);
+  }
+
+  providers(): Observable<PaymentProviderInfo[]> {
+    return this.api.get<PaymentProviderInfo[]>('/payments/providers');
+  }
+
+  /** Trang return của VNPay chuyển kết quả (đã ký) về backend; backend kiểm tra chữ ký và xử lý idempotent. */
+  sendVnpayReturn(params: Record<string, string>): Observable<PaymentCallbackResult> {
+    return this.api.post<PaymentCallbackResult>('/payments/VNPAY/ipn', params, { context: skipErrorMessage() });
   }
 
   myOrders(page: number, size: number): Observable<PageResponse<OrderSummary>> {

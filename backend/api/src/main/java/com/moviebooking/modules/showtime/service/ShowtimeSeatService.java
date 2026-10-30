@@ -44,6 +44,9 @@ public interface ShowtimeSeatService {
 
     List<Long> seatIdsOfHold(Long holdId);
 
+    /** Hủy vé: ghế đã bán của đơn trở lại trống. */
+    List<Long> releaseSold(Long showtimeId, Long orderId);
+
     /**
      * Chuyển ghế sang SOLD nếu tất cả còn "nhận được": đang giữ bởi chính {@code holdId}, hoặc trống, hoặc giữ đã
      * quá hạn (BR17). Không đổi gì nếu có ghế đã thuộc người khác.

@@ -49,9 +49,9 @@ import { OrderStore } from '../order.store';
         <!-- label[nz-radio] tự chứa ô input bên trong nên luật a11y không nhận ra -->
         <!-- eslint-disable @angular-eslint/template/label-has-associated-control -->
         <nz-radio-group [(ngModel)]="provider" class="providers">
-          <label nz-radio nzValue="MOCK">Cổng thanh toán giả lập (demo)</label>
-          <label nz-radio nzValue="VNPAY" nzDisabled>VNPay (sắp có)</label>
-          <label nz-radio nzValue="MOMO" nzDisabled>MoMo (sắp có)</label>
+          @for (p of store.providers(); track p.code) {
+            <label nz-radio [nzValue]="p.code">{{ p.name }}</label>
+          }
         </nz-radio-group>
         <!-- eslint-enable @angular-eslint/template/label-has-associated-control -->
 
@@ -107,6 +107,7 @@ export class CheckoutPage {
 
   constructor() {
     effect(() => this.store.load(this.code()));
+    this.store.loadProviders();
     // Đơn không còn chờ thanh toán (đã trả, hết hạn, hủy) → sang trang kết quả
     effect(() => {
       const status = this.store.status();

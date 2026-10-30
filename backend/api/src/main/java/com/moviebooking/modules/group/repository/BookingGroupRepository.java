@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -42,6 +43,18 @@ public interface BookingGroupRepository extends JpaRepository<BookingGroup, Long
             + "(select m.groupId from GroupMember m where m.user.id = :userId and m.leftAt is null) "
             + "order by g.createdAt desc")
     List<BookingGroup> findForMember(@Param("userId") Long userId);
+
+    @Query("select g.id from BookingGroup g where g.lockedShowtimeId = :showtimeId and g.status in "
+            + "(com.moviebooking.modules.group.enums.GroupStatus.LOCKED, "
+            + "com.moviebooking.modules.group.enums.GroupStatus.HOLDING, "
+            + "com.moviebooking.modules.group.enums.GroupStatus.BOOKED)")
+    List<Long> findIdsByLockedShowtime(@Param("showtimeId") Long showtimeId);
+
+    @Modifying
+    @Query("update BookingGroup g set g.status = com.moviebooking.modules.group.enums.GroupStatus.COMPLETED "
+            + "where g.status = com.moviebooking.modules.group.enums.GroupStatus.BOOKED "
+            + "and g.lockedShowtimeId in (select s.id from Showtime s where s.endAt < :now)")
+    int completeFinished(@Param("now") Instant now);
 
     /** Nhóm chưa chốt đã quá hạn chốt. */
     @Query("select g.id from BookingGroup g where g.status = com.moviebooking.modules.group.enums.GroupStatus.OPEN "

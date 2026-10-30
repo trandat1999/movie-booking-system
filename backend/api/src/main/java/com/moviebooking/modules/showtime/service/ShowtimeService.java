@@ -26,5 +26,6 @@ public interface ShowtimeService {
     ShowtimeResponse update(Long id, ShowtimeUpdateRequest request);
 
     /** Hủy suất chưa bắt đầu và chưa có ghế được giữ/bán (hoàn tiền tự động được bổ sung ở M7). */
-    ShowtimeResponse cancel(Long id);
+    /** Hủy suất chưa bắt đầu; đơn đã bán được hủy và hoàn tiền 100 % (SCHADM03). */
+    ShowtimeResponse cancel(Long id, Long actorId);
 }

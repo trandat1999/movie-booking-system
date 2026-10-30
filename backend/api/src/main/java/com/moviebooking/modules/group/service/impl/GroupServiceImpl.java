@@ -499,9 +499,13 @@ public class GroupServiceImpl implements GroupService {
     @Transactional
     public GroupDetailResponse cancel(Long userId, Long groupId) {
         BookingGroup group = lockAsLeader(groupId, userId);
-        requireStatus(group, GroupStatus.OPEN, GroupStatus.LOCKED, GroupStatus.HOLDING);
+        requireStatus(group, GroupStatus.OPEN, GroupStatus.LOCKED, GroupStatus.HOLDING, GroupStatus.BOOKED);
         if (group.getStatus() == GroupStatus.HOLDING && group.getHoldId() != null) {
             holdService.releaseGroupHold(group.getHoldId(), userId);
+        }
+        if (group.getStatus() == GroupStatus.BOOKED) {
+            // GRP21: hủy toàn bộ đơn nhóm theo chính sách (không hủy một phần, D9)
+            orderService.cancelGroupOrder(group.getOrderId(), userId);
         }
         group.setStatus(GroupStatus.CANCELLED);
         group.setHoldId(null);
@@ -700,6 +704,41 @@ public class GroupServiceImpl implements GroupService {
                     "Đơn " + event.orderCode() + " của nhóm " + group.getName()
                             + " đã được thanh toán. Xem vé của bạn trong mục Vé của tôi.");
         });
+    }
+
+    @Override
+    @Transactional
+    public void onShowtimeCancelled(Long showtimeId) {
+        for (Long id : groupRepository.findIdsByLockedShowtime(showtimeId)) {
+            BookingGroup group = groupRepository.findForUpdate(id).orElse(null);
+            if (group == null) {
+                continue;
+            }
+            if (group.getStatus() == GroupStatus.LOCKED || group.getStatus() == GroupStatus.HOLDING) {
+                group.setStatus(GroupStatus.OPEN);
+                group.setLockedShowtimeId(null);
+                group.setLockedTicketCount(null);
+                group.setHoldId(null);
+                group.setOrderId(null);
+                record(group, "SHOWTIME_CANCELLED", null, Map.of("showtimeId", showtimeId));
+                changed(group, "STATUS_CHANGED", Map.of("status", GroupStatus.OPEN.name()));
+                notifyMembers(group, null, "GROUP_SHOWTIME_CANCELLED", "Suất chiếu của nhóm bị hủy",
+                        "Rạp đã hủy suất chiếu nhóm " + group.getName() + " đã chốt. Nhóm quay lại bước chọn suất.");
+            } else if (group.getStatus() == GroupStatus.BOOKED) {
+                // Đơn của nhóm được module đặt vé hủy và hoàn 100 %
+                group.setStatus(GroupStatus.CANCELLED);
+                record(group, "SHOWTIME_CANCELLED", null, Map.of("showtimeId", showtimeId));
+                changed(group, "STATUS_CHANGED", Map.of("status", GroupStatus.CANCELLED.name()));
+                notifyMembers(group, null, "GROUP_SHOWTIME_CANCELLED", "Suất chiếu của nhóm bị hủy",
+                        "Rạp đã hủy suất chiếu của nhóm " + group.getName() + ". Đơn của nhóm được hoàn tiền 100 %.");
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public int completeFinishedGroups() {
+        return groupRepository.completeFinished(clock.instant());
     }
 
     @Override
