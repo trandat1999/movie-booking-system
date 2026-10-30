@@ -165,6 +165,26 @@ class GroupIntegrationTest extends AbstractAdminIntegrationTest {
                 .andExpect(jsonPath("$.data[0].id").value(groupId))
                 .andExpect(jsonPath("$.data[0].status").value("BOOKED"))
                 .andExpect(jsonPath("$.data[0].memberCount").value(3));
+
+        // Đơn nhóm chỉ hủy từ trang nhóm (GRP21); hủy → hoàn tiền, vé mọi người bị hủy
+        perform(leader, post("/api/v1/orders/{code}/cancel", orderCode))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error.code").value("GROUP_ORDER_CANCEL_VIA_GROUP"));
+        perform(leader, post("/api/v1/groups/{id}/cancel", groupId))
+                .andExpect(jsonPath("$.data.status").value("CANCELLED"))
+                .andExpect(jsonPath("$.data.order.status").value("REFUNDED"));
+        perform(bob, get("/api/v1/me/tickets")).andExpect(jsonPath("$.data.length()").value(0));
+    }
+
+    @Test
+    void cancelledShowtimeSendsLockedGroupBackToPlanning() throws Exception {
+        long groupId = lockedGroup(2);
+        postJson("/api/v1/admin/showtimes/{id}/cancel", Map.of(), fixture.showtimeId()).andExpect(status().isOk());
+        perform(alice, get("/api/v1/groups/{id}", groupId))
+                .andExpect(jsonPath("$.data.status").value("OPEN"))
+                .andExpect(jsonPath("$.data.locked").doesNotExist());
+        perform(alice, get("/api/v1/me/notifications"))
+                .andExpect(jsonPath("$.data.items[?(@.type == 'GROUP_SHOWTIME_CANCELLED')]").exists());
     }
 
     @Test

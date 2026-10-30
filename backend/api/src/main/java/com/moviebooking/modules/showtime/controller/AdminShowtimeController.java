@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
+import com.moviebooking.security.AuthenticatedUser;
+import com.moviebooking.security.CurrentUser;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -68,10 +70,10 @@ public class AdminShowtimeController {
         return ApiResponse.ok(showtimeService.update(id, request));
     }
 
-    @Operation(summary = "Hủy suất chiếu (SCHADM03)")
+    @Operation(summary = "Hủy suất chiếu (SCHADM03) — đơn đã bán được hủy và hoàn tiền 100 %, khách và nhóm nhận thông báo")
     @PostMapping("/{id}/cancel")
     @Audited(action = "SHOWTIME_CANCEL", resource = "showtime", resourceId = "#id")
-    public ApiResponse<ShowtimeResponse> cancel(@PathVariable Long id) {
-        return ApiResponse.ok(showtimeService.cancel(id));
+    public ApiResponse<ShowtimeResponse> cancel(@CurrentUser AuthenticatedUser user, @PathVariable Long id) {
+        return ApiResponse.ok(showtimeService.cancel(id, user.id()));
     }
 }

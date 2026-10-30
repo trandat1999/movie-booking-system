@@ -1,6 +1,13 @@
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BookingApi, Order, OrderStatusMessage, PaymentCallbackResult, RealtimeService } from '@mb/shared';
+import {
+  BookingApi,
+  Order,
+  OrderStatusMessage,
+  PaymentCallbackResult,
+  PaymentProviderInfo,
+  RealtimeService,
+} from '@mb/shared';
 import { filter, finalize, interval, map, Observable, Subscription, switchMap, takeWhile, tap } from 'rxjs';
 
 const POLL_INTERVAL_MS = 3000;
@@ -48,6 +55,18 @@ export class OrderStore {
       tap((order) => this.order.set(order)),
       finalize(() => this.busy.set(false)),
     );
+  }
+
+  readonly providers = signal<PaymentProviderInfo[]>([]);
+
+  loadProviders(): void {
+    this.api.providers().subscribe((list) => this.providers.set(list));
+  }
+
+  /** Trang return của VNPay: gửi kết quả đã ký về backend. */
+  sendVnpayReturn(params: Record<string, string>): Observable<PaymentCallbackResult> {
+    this.busy.set(true);
+    return this.api.sendVnpayReturn(params).pipe(finalize(() => this.busy.set(false)));
   }
 
   /** Cổng giả lập gửi callback về backend. */

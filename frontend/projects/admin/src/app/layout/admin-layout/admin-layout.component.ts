@@ -23,7 +23,8 @@ const MENU: MenuItem[] = [
   { label: 'Đơn đặt vé', icon: 'shopping-cart', link: '/orders', permission: Permissions.ORDER_READ },
   { label: 'Nhóm đặt vé', icon: 'team', link: '/groups', permission: Permissions.GROUP_READ },
   { label: 'Khuyến mãi', icon: 'gift', link: '/promotions', permission: Permissions.PROMOTION_WRITE },
-  { label: 'Check-in', icon: 'scan', link: '/checkin', permission: Permissions.TICKET_CHECKIN },
+  { label: 'Soát vé', icon: 'scan', link: '/checkin', permission: Permissions.TICKET_CHECKIN },
+  { label: 'Hoàn tiền', icon: 'rollback', link: '/refunds', permission: Permissions.ORDER_REFUND },
   { label: 'Người dùng', icon: 'user', link: '/users', permission: Permissions.USER_READ },
   { label: 'Cấu hình hệ thống', icon: 'setting', link: '/settings', permission: Permissions.SETTING_WRITE },
 ];

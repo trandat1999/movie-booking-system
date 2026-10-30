@@ -8,6 +8,7 @@ import com.moviebooking.infrastructure.payment.PaymentProvider;
 import com.moviebooking.modules.booking.service.OrderService;
 import com.moviebooking.modules.booking.service.PaymentTarget;
 import com.moviebooking.modules.payment.dto.response.PaymentCallbackResponse;
+import com.moviebooking.modules.payment.dto.response.PaymentProviderView;
 import com.moviebooking.modules.payment.dto.response.PaymentSessionResponse;
 import com.moviebooking.modules.payment.enums.PaymentStatus;
 import com.moviebooking.modules.payment.repository.PaymentRepository;
@@ -47,12 +48,21 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional(readOnly = true)
-    public PaymentSessionResponse initiate(Long userId, String orderCode, String providerCode) {
+    public PaymentSessionResponse initiate(Long userId, String orderCode, String providerCode, String clientIp) {
         PaymentProvider provider = provider(providerCode);
         PaymentTarget order = orderService.getPayable(userId, orderCode);
         PaymentProvider.PaymentSession session =
-                provider.createPayment(order.code(), order.total(), "Thanh toan don " + order.code());
+                provider.createPayment(order.code(), order.total(), "Thanh toan don " + order.code(), clientIp);
         return new PaymentSessionResponse(provider.code(), session.redirectUrl());
+    }
+
+    @Override
+    public List<PaymentProviderView> providers() {
+        return providers.values().stream()
+                .filter(PaymentProvider::enabled)
+                .sorted(java.util.Comparator.comparing(PaymentProvider::code))
+                .map(p -> new PaymentProviderView(p.code(), p.displayName()))
+                .toList();
     }
 
     @Override
@@ -104,6 +114,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     private PaymentProvider provider(String code) {
         PaymentProvider provider = code == null ? null : providers.get(code.toUpperCase(Locale.ROOT));
+        if (provider != null && !provider.enabled()) {
+            provider = null;
+        }
         if (provider == null) {
             throw new BusinessException(ErrorCode.PAYMENT_PROVIDER_NOT_SUPPORTED);
         }

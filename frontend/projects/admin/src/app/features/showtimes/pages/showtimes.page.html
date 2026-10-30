@@ -79,7 +79,16 @@
           <td nzRight class="actions">
             @if (editable(s)) {
               <button nz-button nzSize="small" (click)="open(s)">Sửa</button>
-              <button nz-button nzSize="small" nzDanger nz-popconfirm nzPopconfirmTitle="Hủy suất chiếu này?" (nzOnConfirm)="cancel(s)">
+            }
+            @if (s.phase === 'UPCOMING') {
+              <button
+                nz-button
+                nzSize="small"
+                nzDanger
+                nz-popconfirm
+                nzPopconfirmTitle="Hủy suất chiếu? Đơn đã bán được hủy và hoàn tiền 100 %, khách và nhóm nhận thông báo."
+                (nzOnConfirm)="cancel(s)"
+              >
                 Hủy
               </button>
             }

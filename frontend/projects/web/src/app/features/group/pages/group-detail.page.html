@@ -279,6 +279,10 @@
           <button nz-button nzBlock (click)="leave()">Rời nhóm</button>
         }
       }
+      @if (g.status === 'BOOKED' && store.isLeader()) {
+        <button nz-button nzDanger nzBlock (click)="cancelBooked()">Hủy đặt vé nhóm</button>
+        <p class="muted small hint">Hủy toàn bộ vé của nhóm và hoàn tiền theo chính sách (trước giờ chiếu theo quy định của rạp).</p>
+      }
     </aside>
   </div>
 

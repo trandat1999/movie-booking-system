@@ -4,6 +4,7 @@ import com.moviebooking.common.response.PageResponse;
 import com.moviebooking.exception.BusinessException;
 import com.moviebooking.exception.ErrorCode;
 import com.moviebooking.modules.booking.dto.request.CreateOrderRequest;
+import com.moviebooking.modules.booking.dto.response.AdminRefundView;
 import com.moviebooking.modules.booking.dto.response.MyTicketResponse;
 import com.moviebooking.modules.booking.dto.response.OrderResponse;
 import com.moviebooking.modules.booking.dto.response.OrderSummaryResponse;
@@ -22,7 +23,14 @@ import com.moviebooking.modules.cinema.entity.Seat;
 import com.moviebooking.modules.cinema.service.RoomService;
 import com.moviebooking.modules.showtime.entity.Showtime;
 import com.moviebooking.modules.showtime.service.ShowtimeSeatService;
+import com.moviebooking.modules.booking.enums.TicketStatus;
+import com.moviebooking.modules.payment.dto.response.RefundView;
+import com.moviebooking.modules.payment.enums.RefundStatus;
+import com.moviebooking.modules.payment.service.RefundService;
+import com.moviebooking.modules.setting.enums.SettingKey;
+import com.moviebooking.modules.setting.service.SettingService;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -48,6 +56,8 @@ public class OrderServiceImpl implements OrderService {
     private final RoomService roomService;
     private final BookingTransitions transitions;
     private final BookingViews views;
+    private final RefundService refundService;
+    private final SettingService settingService;
     private final Clock clock;
 
     @Override
@@ -122,6 +132,14 @@ public class OrderServiceImpl implements OrderService {
                 .findForUpdateByCode(code)
                 .filter(o -> o.getUserId().equals(userId))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        if (order.getStatus() == OrderStatus.PAID) {
+            // Đơn nhóm chỉ trưởng nhóm hủy từ trang nhóm để nhóm cũng chuyển trạng thái (GRP21)
+            if (order.getGroupId() != null) {
+                throw new BusinessException(ErrorCode.GROUP_ORDER_CANCEL_VIA_GROUP);
+            }
+            cancelPaidOrder(order, userId, "CANCELLED_BY_USER", true);
+            return views.order(findOwned(userId, code), clock.instant());
+        }
         if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
             throw new BusinessException(ErrorCode.ORDER_NOT_CANCELLABLE);
         }
@@ -135,6 +153,117 @@ public class OrderServiceImpl implements OrderService {
                 "CANCELLED_BY_USER",
                 userId);
         return views.order(findOwned(userId, code), clock.instant());
+    }
+
+    @Override
+    @Transactional
+    public void cancelGroupOrder(Long orderId, Long actorId) {
+        Order order = orderRepository
+                .findForUpdateById(orderId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        if (order.getStatus() != OrderStatus.PAID) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_CANCELLABLE);
+        }
+        cancelPaidOrder(order, actorId, "GROUP_CANCEL", true);
+    }
+
+    @Override
+    @Transactional
+    public int cancelForShowtime(Long showtimeId, Long actorId) {
+        int cancelled = 0;
+        for (Long id : orderRepository.findIdsByShowtimeAndStatuses(
+                showtimeId, List.of(OrderStatus.PENDING_PAYMENT, OrderStatus.PAID))) {
+            Order order = orderRepository.findForUpdateById(id).orElseThrow();
+            if (order.getStatus() == OrderStatus.PAID) {
+                cancelPaidOrder(order, actorId, "SHOWTIME_CANCELLED", false);
+            } else if (order.getStatus() == OrderStatus.PENDING_PAYMENT) {
+                transitions.changeStatus(order, OrderStatus.CANCELLED, "SHOWTIME_CANCELLED", actorId, null);
+            } else {
+                continue;
+            }
+            cancelled++;
+        }
+        // Lượt giữ còn mở (có hoặc chưa có đơn) → trả ghế, nhóm đang giữ ghế quay về LOCKED
+        for (Long holdId : seatHoldRepository.findActiveIdsByShowtime(showtimeId)) {
+            transitions.closeHold(
+                    holdId, null, null, HoldStatus.RELEASED, OrderStatus.CANCELLED, "SHOWTIME_CANCELLED", actorId);
+        }
+        return cancelled;
+    }
+
+    @Override
+    @Transactional
+    public RefundView completeRefund(Long refundId, Long actorId, String note) {
+        RefundView refund = refundService.markCompleted(refundId, actorId, note);
+        orderRepository.findForUpdateById(refund.orderId()).ifPresent(order -> {
+            if (order.getStatus() == OrderStatus.CANCELLED || order.getStatus() == OrderStatus.REFUND_PENDING) {
+                transitions.changeStatus(order, OrderStatus.REFUNDED, "REFUNDED", actorId, Map.of("amount", refund.amount()));
+            }
+        });
+        return refund;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<AdminRefundView> listRefunds(RefundStatus status, int page, int size) {
+        PageResponse<RefundView> refunds = refundService.list(status, page, size);
+        Map<Long, Order> orders = orderRepository
+                .findAllById(refunds.items().stream().map(RefundView::orderId).toList())
+                .stream()
+                .collect(Collectors.toMap(Order::getId, Function.identity()));
+        return new PageResponse<>(
+                refunds.items().stream()
+                        .map(r -> {
+                            Order o = orders.get(r.orderId());
+                            return new AdminRefundView(
+                                    r.id(), o.getCode(), o.getUserId(), o.getTotal(), r.amount(), r.reason(), r.status(),
+                                    r.provider(), r.note(), r.createdAt(), r.processedAt());
+                        })
+                        .toList(),
+                refunds.page(),
+                refunds.size(),
+                refunds.totalElements(),
+                refunds.totalPages());
+    }
+
+    @Override
+    @Transactional
+    public int completeFinishedOrders() {
+        return orderRepository.completeFinished(clock.instant());
+    }
+
+    /**
+     * Hủy đơn đã thanh toán (BR10): vé → CANCELLED, ghế trả về trống, đơn → CANCELLED và tạo yêu cầu hoàn tiền.
+     * Hoàn xong ngay (cổng hỗ trợ hoàn tự động) thì đơn → REFUNDED.
+     *
+     * @param byPolicy true: áp thời hạn {@code cancel_before_hours} và tỷ lệ {@code refund_percent}; false (rạp hủy
+     *     suất): hoàn 100 %, không giới hạn thời gian
+     */
+    private void cancelPaidOrder(Order order, Long actorId, String reason, boolean byPolicy) {
+        Showtime showtime = order.getShowtime();
+        Instant now = clock.instant();
+        if (byPolicy) {
+            Instant deadline = showtime.getStartAt()
+                    .minus(Duration.ofHours(settingService.getInt(SettingKey.CANCEL_BEFORE_HOURS)));
+            if (now.isAfter(deadline)) {
+                throw new BusinessException(ErrorCode.CANCEL_DEADLINE_PASSED);
+            }
+        }
+        if (order.getTickets().stream().anyMatch(t -> t.getStatus() == TicketStatus.USED)) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_CANCELLABLE);
+        }
+        order.getTickets().forEach(t -> t.setStatus(TicketStatus.CANCELLED));
+        // Ghi xuống CSDL trước khi trả ghế: index duy nhất tickets(showtime, seat) bỏ qua vé đã hủy
+        orderRepository.flush();
+        showtimeSeatService.releaseSold(showtime.getId(), order.getId());
+
+        int percent = byPolicy ? settingService.getInt(SettingKey.REFUND_PERCENT) : 100;
+        long amount = order.getTotal() * percent / 100;
+        transitions.changeStatus(order, OrderStatus.CANCELLED, reason, actorId, Map.of("refundPercent", percent, "refundAmount", amount));
+        RefundView refund = refundService.request(order.getId(), amount, reason, actorId);
+        if (refund.status() == RefundStatus.COMPLETED) {
+            transitions.changeStatus(order, OrderStatus.REFUNDED, "REFUNDED", null, Map.of("amount", amount));
+        }
     }
 
     @Override
@@ -267,6 +396,11 @@ public class OrderServiceImpl implements OrderService {
                 transitions.publishIfGroupHold(hold);
             }
             transitions.changeStatus(order, OrderStatus.REFUND_PENDING, "PAID_SEATS_UNAVAILABLE", null, data);
+            // BR17: hoàn tiền tự động (cổng hỗ trợ) hoặc chờ admin hoàn thủ công
+            RefundView refund = refundService.request(order.getId(), order.getTotal(), "SEATS_UNAVAILABLE", null);
+            if (refund.status() == RefundStatus.COMPLETED) {
+                transitions.changeStatus(order, OrderStatus.REFUNDED, "REFUNDED", null, Map.of("amount", refund.amount()));
+            }
         }
     }
 

@@ -95,6 +95,18 @@ public enum ErrorCode {
     SEAT_COUNT_MISMATCH(HttpStatus.BAD_REQUEST, "Số chỗ của các ghế đã chọn không khớp số vé của nhóm"),
     INVALID_ASSIGNMENT(HttpStatus.BAD_REQUEST, "Phân phối vé không hợp lệ"),
 
+    // Hủy, hoàn tiền, check-in (M7)
+    CANCEL_DEADLINE_PASSED(HttpStatus.CONFLICT, "Đã quá thời hạn được hủy vé trước giờ chiếu"),
+    GROUP_ORDER_CANCEL_VIA_GROUP(HttpStatus.CONFLICT, "Đơn của nhóm chỉ trưởng nhóm được hủy từ trang nhóm"),
+    REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu hoàn tiền"),
+    REFUND_NOT_PENDING(HttpStatus.CONFLICT, "Yêu cầu hoàn tiền đã được xử lý"),
+    SHOWTIME_ALREADY_STARTED(HttpStatus.CONFLICT, "Suất chiếu đã bắt đầu hoặc đã hủy"),
+    INVALID_TICKET_QR(HttpStatus.BAD_REQUEST, "Mã QR không hợp lệ hoặc không phải vé của hệ thống"),
+    TICKET_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy vé"),
+    TICKET_ALREADY_USED(HttpStatus.CONFLICT, "Vé đã được sử dụng"),
+    TICKET_NOT_VALID(HttpStatus.CONFLICT, "Vé không còn hiệu lực (đơn chưa thanh toán, đã hủy hoặc đã hoàn tiền)"),
+    CHECKIN_NOT_OPEN(HttpStatus.CONFLICT, "Chưa tới giờ soát vé hoặc suất chiếu đã kết thúc"),
+
     // Cấu hình (M2)
     SETTING_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy tham số cấu hình"),
     INVALID_SETTING_VALUE(HttpStatus.BAD_REQUEST, "Giá trị cấu hình không hợp lệ");

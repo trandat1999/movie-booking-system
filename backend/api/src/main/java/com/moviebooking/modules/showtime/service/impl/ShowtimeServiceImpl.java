@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import com.moviebooking.modules.showtime.event.ShowtimeCancelledEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -61,6 +63,7 @@ public class ShowtimeServiceImpl implements ShowtimeService {
     private final PricingService pricingService;
     private final SettingService settingService;
     private final ShowtimeMapper showtimeMapper;
+    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
     @Override
@@ -160,10 +163,14 @@ public class ShowtimeServiceImpl implements ShowtimeService {
 
     @Override
     @Transactional
-    public ShowtimeResponse cancel(Long id) {
+    public ShowtimeResponse cancel(Long id, Long actorId) {
         Showtime showtime = find(id);
-        ensureEditable(showtime);
+        // Được hủy cả khi đã bán vé (SCHADM03): module đặt vé hủy đơn và hoàn tiền 100 % qua sự kiện
+        if (showtime.getStatus() == ShowtimeStatus.CANCELLED || !showtime.getStartAt().isAfter(clock.instant())) {
+            throw new BusinessException(ErrorCode.SHOWTIME_ALREADY_STARTED);
+        }
         showtime.setStatus(ShowtimeStatus.CANCELLED);
+        eventPublisher.publishEvent(new ShowtimeCancelledEvent(showtime.getId(), actorId));
         return toResponse(showtime);
     }
 

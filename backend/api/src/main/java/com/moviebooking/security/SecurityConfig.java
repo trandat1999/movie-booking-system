@@ -65,6 +65,8 @@ public class SecurityConfig {
                         // IPN của cổng thanh toán: xác thực bằng chữ ký của cổng, không phải JWT
                         .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/ipn")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/payments/*/ipn")
+                        .permitAll()
                         // Tra cứu công khai: phim, rạp, lịch chiếu, sơ đồ ghế (M3)
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS)
                         .permitAll()

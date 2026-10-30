@@ -65,6 +65,11 @@ app:
   payment:
     mock:
       secret: ${MOCK_PAYMENT_SECRET:}
+    # VNPay sandbox: để trống thì tắt VNPay (đăng ký tại sandbox.vnpayment.vn để có mã + khóa)
+    vnpay:
+      tmn-code: ${VNPAY_TMN_CODE:}
+      hash-secret: ${VNPAY_HASH_SECRET:}
+      return-url: ${VNPAY_RETURN_URL:http://localhost:4200/payment/vnpay-return}
   mail:
     enabled: ${MAIL_ENABLED:false}
   rate-limit:

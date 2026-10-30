@@ -5,6 +5,7 @@ import com.moviebooking.modules.booking.event.HoldClosedEvent;
 import com.moviebooking.modules.booking.event.OrderStatusChangedEvent;
 import com.moviebooking.modules.group.service.GroupService;
 import com.moviebooking.modules.notification.service.NotificationService;
+import com.moviebooking.modules.showtime.event.ShowtimeCancelledEvent;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,11 @@ public class GroupEventListener {
     @EventListener
     public void onHoldClosed(HoldClosedEvent event) {
         groupService.onHoldClosed(event);
+    }
+
+    @EventListener
+    public void onShowtimeCancelled(ShowtimeCancelledEvent event) {
+        groupService.onShowtimeCancelled(event.showtimeId());
     }
 
     @EventListener(condition = "#event.groupId != null")

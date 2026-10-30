@@ -94,6 +94,12 @@ public interface GroupService {
 
     void onOrderStatusChanged(OrderStatusChangedEvent event);
 
+    /** Rạp hủy suất đã chốt: nhóm chưa đặt quay lại OPEN, nhóm đã đặt → CANCELLED (SCHADM03). */
+    void onShowtimeCancelled(Long showtimeId);
+
+    /** BOOKED → COMPLETED cho nhóm có suất đã chiếu xong. @return số nhóm */
+    int completeFinishedGroups();
+
     /** @return số nhóm đã chuyển EXPIRED */
     int expireOverdueGroups();
 

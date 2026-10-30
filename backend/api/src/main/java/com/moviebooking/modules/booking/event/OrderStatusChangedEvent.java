@@ -7,6 +7,7 @@ import com.moviebooking.modules.booking.enums.OrderStatus;
  * module nhóm nghe đồng bộ để cập nhật trạng thái nhóm trong cùng transaction.
  *
  * @param groupId khác null nếu là đơn của nhóm
+ * @param reason loại sự kiện ghi trong {@code order_events}, ví dụ PAID, CANCELLED_BY_USER, SHOWTIME_CANCELLED
  */
 public record OrderStatusChangedEvent(
-        Long orderId, String orderCode, Long userId, Long groupId, OrderStatus from, OrderStatus to) {}
+        Long orderId, String orderCode, Long userId, Long groupId, OrderStatus from, OrderStatus to, String reason) {}

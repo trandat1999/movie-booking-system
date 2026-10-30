@@ -1,6 +1,7 @@
 package com.moviebooking.modules.notification.event;
 
 import com.moviebooking.infrastructure.realtime.RealtimePublisher;
+import com.moviebooking.modules.booking.enums.OrderStatus;
 import com.moviebooking.modules.booking.event.OrderStatusChangedEvent;
 import com.moviebooking.modules.notification.service.NotificationService;
 import java.util.Map;
@@ -53,8 +54,29 @@ public class OrderNotificationListener {
                         "Đơn hàng đã hết hạn",
                         "Đơn " + event.orderCode() + " đã hết thời gian giữ ghế và chưa được thanh toán.",
                         link);
+                case CANCELLED -> {
+                    // Hủy đơn chưa thanh toán do chính người dùng: không cần thông báo
+                    if (event.from() == OrderStatus.PAID) {
+                        boolean byCinema = "SHOWTIME_CANCELLED".equals(event.reason());
+                        notificationService.notify(
+                                event.userId(),
+                                "ORDER_CANCELLED",
+                                byCinema ? "Suất chiếu đã bị hủy" : "Đã hủy vé",
+                                byCinema
+                                        ? "Rạp đã hủy suất chiếu của đơn " + event.orderCode()
+                                                + ". Đơn được hoàn tiền 100 %."
+                                        : "Đơn " + event.orderCode() + " đã được hủy theo yêu cầu.",
+                                link);
+                    }
+                }
+                case REFUNDED -> notificationService.notify(
+                        event.userId(),
+                        "ORDER_REFUNDED",
+                        "Đã hoàn tiền",
+                        "Tiền của đơn " + event.orderCode() + " đã được hoàn về phương thức thanh toán ban đầu.",
+                        link);
                 default -> {
-                    // Đơn do chính người dùng hủy: không cần thông báo
+                    // Các trạng thái khác không cần thông báo
                 }
             }
         } catch (RuntimeException ex) {

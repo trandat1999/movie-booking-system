@@ -12,6 +12,11 @@ import com.moviebooking.modules.booking.entity.Order;
 import com.moviebooking.modules.booking.entity.Ticket;
 import com.moviebooking.modules.booking.enums.TicketStatus;
 import com.moviebooking.modules.showtime.entity.Showtime;
+import com.moviebooking.modules.booking.enums.OrderStatus;
+import com.moviebooking.modules.payment.service.RefundService;
+import com.moviebooking.modules.setting.enums.SettingKey;
+import com.moviebooking.modules.setting.service.SettingService;
+import java.time.Duration;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -23,6 +28,8 @@ class BookingViews {
 
     private final TicketSigner ticketSigner;
     private final QrCodeGenerator qrCodeGenerator;
+    private final RefundService refundService;
+    private final SettingService settingService;
 
     BookingShowtimeInfo showtime(Showtime showtime) {
         return new BookingShowtimeInfo(
@@ -61,6 +68,17 @@ class BookingViews {
                         .map(ticket -> new TicketResponse(
                                 ticket.getCode(), ticket.getSeatLabel(), ticket.getStatus(), qr(ticket)))
                         .toList(),
+                order.getGroupId(),
+                order.getStatus() == OrderStatus.PAID
+                        ? order.getShowtime().getStartAt()
+                                .minus(Duration.ofHours(settingService.getInt(SettingKey.CANCEL_BEFORE_HOURS)))
+                        : null,
+                order.getStatus() == OrderStatus.PAID
+                        ? qrCodeGenerator.toDataUri(ticketSigner.sign(order.getCode()))
+                        : null,
+                refundService.findByOrder(order.getId())
+                        .map(r -> new OrderResponse.RefundInfo(r.amount(), r.status(), r.processedAt()))
+                        .orElse(null),
                 now);
     }
 

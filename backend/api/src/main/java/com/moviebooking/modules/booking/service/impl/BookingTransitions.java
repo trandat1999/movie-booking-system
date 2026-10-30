@@ -86,7 +86,7 @@ class BookingTransitions {
         recordEvent(order, eventType, from, to, actorId, data);
         eventPublisher.publishEvent(
                 new OrderStatusChangedEvent(
-                        order.getId(), order.getCode(), order.getUserId(), order.getGroupId(), from, to));
+                        order.getId(), order.getCode(), order.getUserId(), order.getGroupId(), from, to, eventType));
     }
 
     void recordEvent(
